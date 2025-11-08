@@ -51,16 +51,11 @@ async function addCurrentTab() {
   addBookmark(t.title, t.url);
 }
 
-function setPasswordFromInput() {
-  const pw = document.getElementById('new-password').value;
-  if (!pw) return alert('Enter a password to set.');
-  sha256(pw).then(hash => {
-    chrome.storage.local.set({ passwordHash: hash }, () => {
-      document.getElementById('new-password').value = '';
-      alert('Password set.');
-    });
-  });
-}
+// Password UI moved to Options page; provide helper to open it from popup
+document.getElementById('open-options')?.addEventListener('click', () => {
+  if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
+  else chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
+});
 
 function wireListHandlers() {
   document.getElementById('bookmarks-list').addEventListener('click', (e) => {
@@ -104,7 +99,6 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
 
 document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
-document.getElementById('set-password').addEventListener('click', setPasswordFromInput);
 
 document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
