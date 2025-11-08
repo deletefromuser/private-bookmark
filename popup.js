@@ -6,39 +6,42 @@ async function sha256(text) {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function getFolderId() {
-  return new Promise((res) => chrome.storage.local.get(['privateFolderId'], r => res(r.privateFolderId)));
+// Storage-backed bookmarks helpers
+function getStorage() {
+  return new Promise(res => chrome.storage.local.get(['privateBookmarks', 'privateNextId', 'passwordHash'], r => res(r)));
+}
+
+function saveStorage(obj) {
+  return new Promise(res => chrome.storage.local.set(obj, res));
 }
 
 async function listBookmarks() {
   const listEl = document.getElementById('bookmarks-list');
   listEl.textContent = 'Loading...';
-  const folderId = await getFolderId();
-  if (!folderId) {
-    listEl.textContent = 'No private folder found.';
+  const { privateBookmarks = [] } = await getStorage();
+  listEl.innerHTML = '';
+  if (!privateBookmarks || privateBookmarks.length === 0) {
+    listEl.textContent = 'No bookmarks yet.';
     return;
   }
-  chrome.bookmarks.getChildren(folderId, (nodes) => {
-    listEl.innerHTML = '';
-    if (!nodes || nodes.length === 0) {
-      listEl.textContent = 'No bookmarks yet.';
-      return;
-    }
-    nodes.forEach(n => {
-      const row = document.createElement('div');
-      row.className = 'bm-row';
-      row.innerHTML = `<a class="bm-link" href="#" data-id="${n.id}">${n.title || n.url}</a>
-        <button data-id="${n.id}" class="edit">Edit</button>
-        <button data-id="${n.id}" class="del">Delete</button>`;
-      listEl.appendChild(row);
-    });
+  privateBookmarks.forEach(n => {
+    const row = document.createElement('div');
+    row.className = 'bm-row';
+    row.innerHTML = `<a class="bm-link" href="#" data-id="${n.id}">${n.title || n.url}</a>
+      <button data-id="${n.id}" class="edit">Edit</button>
+      <button data-id="${n.id}" class="del">Delete</button>`;
+    listEl.appendChild(row);
   });
 }
 
 async function addBookmark(title, url) {
-  const folderId = await getFolderId();
-  if (!folderId) return alert('Private folder not found.');
-  chrome.bookmarks.create({ parentId: folderId, title: title || url, url }, () => listBookmarks());
+  if (!url) return alert('URL required');
+  const { privateBookmarks = [], privateNextId = 1 } = await getStorage();
+  const id = String(privateNextId);
+  const bm = { id, title: title || url, url };
+  privateBookmarks.push(bm);
+  await saveStorage({ privateBookmarks, privateNextId: privateNextId + 1 });
+  await listBookmarks();
 }
 
 async function addCurrentTab() {
@@ -64,16 +67,28 @@ function wireListHandlers() {
     const id = e.target.getAttribute('data-id');
     if (!id) return;
     if (e.target.classList.contains('del')) {
-      if (confirm('Delete bookmark?')) chrome.bookmarks.remove(id, () => listBookmarks());
+      if (!confirm('Delete bookmark?')) return;
+      (async () => {
+        const { privateBookmarks = [] } = await getStorage();
+        const idx = privateBookmarks.findIndex(b => b.id === id);
+        if (idx >= 0) {
+          privateBookmarks.splice(idx, 1);
+          await saveStorage({ privateBookmarks });
+          await listBookmarks();
+        }
+      })();
     } else if (e.target.classList.contains('edit')) {
-      const newTitle = prompt('New title');
-      const newUrl = prompt('New URL (leave blank to keep)');
-      const changes = {};
-      if (newTitle != null) changes.title = newTitle;
-      if (newUrl) changes.url = newUrl;
-      chrome.bookmarks.update(id, changes, () => listBookmarks());
-    } else if (e.target.classList.contains('bm-link') || e.target.classList.contains('bm-link')) {
-      // noop
+      (async () => {
+        const newTitle = prompt('New title');
+        const newUrl = prompt('New URL (leave blank to keep)');
+        const { privateBookmarks = [] } = await getStorage();
+        const bm = privateBookmarks.find(b => b.id === id);
+        if (!bm) return alert('Bookmark not found');
+        if (newTitle != null) bm.title = newTitle;
+        if (newUrl) bm.url = newUrl;
+        await saveStorage({ privateBookmarks });
+        await listBookmarks();
+      })();
     }
   });
 }
@@ -99,9 +114,11 @@ document.getElementById('open-view').addEventListener('click', () => {
 document.getElementById('bookmarks-list').addEventListener('click', (e) => {
   if (e.target && e.target.matches('a.bm-link')) {
     const id = e.target.getAttribute('data-id');
-    chrome.bookmarks.get(id, (nodes) => {
-      if (nodes && nodes[0] && nodes[0].url) chrome.tabs.create({ url: nodes[0].url });
-    });
+    (async () => {
+      const { privateBookmarks = [] } = await getStorage();
+      const bm = privateBookmarks.find(b => b.id === id);
+      if (bm && bm.url) chrome.tabs.create({ url: bm.url });
+    })();
   }
 });
 

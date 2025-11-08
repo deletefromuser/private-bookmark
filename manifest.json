@@ -3,7 +3,7 @@
   "name": "Private Bookmark",
   "version": "1.0",
   "description": "Add/edit/delete/view private bookmarks. Password-protected view.",
-  "permissions": ["bookmarks", "storage", "tabs"],
+  "permissions": ["storage", "tabs"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Private Bookmark"
