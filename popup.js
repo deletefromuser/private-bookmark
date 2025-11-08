@@ -22,13 +22,16 @@ async function addBookmark(title, url) {
   const bm = { id, title: title || url, url };
   privateBookmarks.push(bm);
   await saveStorage({ privateBookmarks, privateNextId: privateNextId + 1 });
+  // return the created bookmark for caller convenience
+  return bm;
 }
 
 async function addCurrentTab() {
   const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
   if (!tabs || tabs.length === 0) return;
   const t = tabs[0];
-  addBookmark(t.title, t.url);
+  await addBookmark(t.title, t.url);
+  showStatus('Bookmark added');
 }
 
 // Password UI moved to Options page; provide helper to open it from popup
@@ -43,7 +46,7 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
   const title = document.getElementById('title').value;
   const url = document.getElementById('url').value;
   if (!url) return alert('URL required');
-  addBookmark(title, url);
+  addBookmark(title, url).then(() => showStatus('Bookmark added'));
   document.getElementById('title').value = '';
   document.getElementById('url').value = '';
 });
@@ -56,3 +59,11 @@ document.getElementById('open-view').addEventListener('click', () => {
 });
 
 // initial: popup only provides add/current/options/view functionality
+
+// small status helper
+function showStatus(msg, timeout = 2500) {
+  const el = document.getElementById('status');
+  if (!el) return;
+  el.textContent = msg;
+  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, timeout);
+}
