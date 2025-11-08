@@ -30,8 +30,19 @@ async function addCurrentTab() {
   const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
   if (!tabs || tabs.length === 0) return;
   const t = tabs[0];
-  await addBookmark(t.title, t.url);
-  showStatus('Bookmark added');
+  const addBtn = document.getElementById('add-bookmark');
+  const addCurrentBtn = document.getElementById('add-current');
+  addBtn.disabled = true;
+  addCurrentBtn.disabled = true;
+  try {
+    await addBookmark(t.title, t.url);
+    showStatus('Bookmark added');
+  } catch (err) {
+    console.warn('Add current failed', err);
+  } finally {
+    addBtn.disabled = false;
+    addCurrentBtn.disabled = false;
+  }
 }
 
 // Password UI moved to Options page; provide helper to open it from popup
@@ -46,7 +57,14 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
   const title = document.getElementById('title').value;
   const url = document.getElementById('url').value;
   if (!url) return alert('URL required');
-  addBookmark(title, url).then(() => showStatus('Bookmark added'));
+  const addBtn = document.getElementById('add-bookmark');
+  const addCurrentBtn = document.getElementById('add-current');
+  addBtn.disabled = true;
+  addCurrentBtn.disabled = true;
+  addBookmark(title, url).then(() => showStatus('Bookmark added')).catch(err => console.warn('Add failed', err)).finally(() => {
+    addBtn.disabled = false;
+    addCurrentBtn.disabled = false;
+  });
   document.getElementById('title').value = '';
   document.getElementById('url').value = '';
 });
