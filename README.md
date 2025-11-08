@@ -62,3 +62,11 @@ Next steps / improvements
 Contact
 -------
 This is a small demo. If you want improvements or tests added, open an issue or request changes.
+
+TODO
+----
+- Add bookmark folder support in the private storage (create named folders, move bookmarks between folders).
+- Implement import from Chrome bookmarks (map Chrome bookmarks into `privateBookmarks` and optionally into folders).
+- Implement export to Chrome bookmarks/HTML so users can export their private bookmarks back into the browser or save a backup HTML file.
+- Add UI in popup or view page to create/manage folders and to trigger import/export.
+- Add unit tests for storage helpers and normalization logic.
