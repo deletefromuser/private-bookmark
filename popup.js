@@ -26,6 +26,57 @@ async function addBookmark(title, url) {
   return bm;
 }
 
+function normalizeUrl(u) {
+  try {
+    const parsed = new URL(u);
+    // drop hash, keep origin + pathname + search
+    let path = parsed.pathname || '/';
+    // remove trailing slash for comparison
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+    return parsed.origin + path + (parsed.search || '');
+  } catch (e) {
+    // fallback: strip hash and trailing slash
+    let s = String(u).split('#')[0];
+    if (s.length > 1 && s.endsWith('/')) s = s.slice(0, -1);
+    return s;
+  }
+}
+
+async function isUrlBookmarked(url) {
+  if (!url) return false;
+  const { privateBookmarks = [] } = await getStorage();
+  const target = normalizeUrl(url);
+  return privateBookmarks.some(b => normalizeUrl(b.url) === target);
+}
+
+async function updateCurrentTabState() {
+  const addCurrentBtn = document.getElementById('add-current');
+  const setBadge = (text, color) => {
+    try {
+      if (color !== undefined) chrome.action.setBadgeBackgroundColor({ color });
+      chrome.action.setBadgeText({ text });
+    } catch (err) {
+      console.warn('Failed to set badge', err);
+    }
+  };
+
+  const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+  if (!tabs || tabs.length === 0) {
+    if (addCurrentBtn) addCurrentBtn.disabled = false;
+    setBadge('');
+    return;
+  }
+  const t = tabs[0];
+  const bookmarked = await isUrlBookmarked(t.url);
+  if (bookmarked) {
+    if (addCurrentBtn) addCurrentBtn.disabled = true;
+    setBadge('★', '#4CAF50');
+  } else {
+    if (addCurrentBtn) addCurrentBtn.disabled = false;
+    setBadge('');
+  }
+}
+
 async function addCurrentTab() {
   const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
   if (!tabs || tabs.length === 0) return;
@@ -42,6 +93,7 @@ async function addCurrentTab() {
   } finally {
     addBtn.disabled = false;
     addCurrentBtn.disabled = false;
+    updateCurrentTabState();
   }
 }
 
@@ -64,6 +116,7 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
   addBookmark(title, url).then(() => showStatus('Bookmark added')).catch(err => console.warn('Add failed', err)).finally(() => {
     addBtn.disabled = false;
     addCurrentBtn.disabled = false;
+  updateCurrentTabState();
   });
   document.getElementById('title').value = '';
   document.getElementById('url').value = '';
@@ -85,3 +138,7 @@ function showStatus(msg, timeout = 2500) {
   el.textContent = msg;
   setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, timeout);
 }
+
+// initialize current-tab state when popup opens
+try { updateCurrentTabState(); } catch (e) { /* non-fatal */ }
+// (showStatus is defined above)
