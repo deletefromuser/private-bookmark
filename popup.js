@@ -15,25 +15,6 @@ function saveStorage(obj) {
   return new Promise(res => chrome.storage.local.set(obj, res));
 }
 
-async function listBookmarks() {
-  const listEl = document.getElementById('bookmarks-list');
-  listEl.textContent = 'Loading...';
-  const { privateBookmarks = [] } = await getStorage();
-  listEl.innerHTML = '';
-  if (!privateBookmarks || privateBookmarks.length === 0) {
-    listEl.textContent = 'No bookmarks yet.';
-    return;
-  }
-  privateBookmarks.forEach(n => {
-    const row = document.createElement('div');
-    row.className = 'bm-row';
-    row.innerHTML = `<a class="bm-link" href="#" data-id="${n.id}">${n.title || n.url}</a>
-      <button data-id="${n.id}" class="edit">Edit</button>
-      <button data-id="${n.id}" class="del">Delete</button>`;
-    listEl.appendChild(row);
-  });
-}
-
 async function addBookmark(title, url) {
   if (!url) return alert('URL required');
   const { privateBookmarks = [], privateNextId = 1 } = await getStorage();
@@ -41,7 +22,6 @@ async function addBookmark(title, url) {
   const bm = { id, title: title || url, url };
   privateBookmarks.push(bm);
   await saveStorage({ privateBookmarks, privateNextId: privateNextId + 1 });
-  await listBookmarks();
 }
 
 async function addCurrentTab() {
@@ -57,36 +37,7 @@ document.getElementById('open-options')?.addEventListener('click', () => {
   else chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
 });
 
-function wireListHandlers() {
-  document.getElementById('bookmarks-list').addEventListener('click', (e) => {
-    const id = e.target.getAttribute('data-id');
-    if (!id) return;
-    if (e.target.classList.contains('del')) {
-      if (!confirm('Delete bookmark?')) return;
-      (async () => {
-        const { privateBookmarks = [] } = await getStorage();
-        const idx = privateBookmarks.findIndex(b => b.id === id);
-        if (idx >= 0) {
-          privateBookmarks.splice(idx, 1);
-          await saveStorage({ privateBookmarks });
-          await listBookmarks();
-        }
-      })();
-    } else if (e.target.classList.contains('edit')) {
-      (async () => {
-        const newTitle = prompt('New title');
-        const newUrl = prompt('New URL (leave blank to keep)');
-        const { privateBookmarks = [] } = await getStorage();
-        const bm = privateBookmarks.find(b => b.id === id);
-        if (!bm) return alert('Bookmark not found');
-        if (newTitle != null) bm.title = newTitle;
-        if (newUrl) bm.url = newUrl;
-        await saveStorage({ privateBookmarks });
-        await listBookmarks();
-      })();
-    }
-  });
-}
+// bookmark list UI removed from popup; edit/delete handled in view.html
 
 document.getElementById('add-bookmark').addEventListener('click', () => {
   const title = document.getElementById('title').value;
@@ -104,18 +55,4 @@ document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
 });
 
-// delegate clicks for open link
-document.getElementById('bookmarks-list').addEventListener('click', (e) => {
-  if (e.target && e.target.matches('a.bm-link')) {
-    const id = e.target.getAttribute('data-id');
-    (async () => {
-      const { privateBookmarks = [] } = await getStorage();
-      const bm = privateBookmarks.find(b => b.id === id);
-      if (bm && bm.url) chrome.tabs.create({ url: bm.url });
-    })();
-  }
-});
-
-// initial
-wireListHandlers();
-listBookmarks();
+// initial: popup only provides add/current/options/view functionality
