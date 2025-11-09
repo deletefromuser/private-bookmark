@@ -121,7 +121,10 @@ async function loadBookmarks() {
       const folderSelectHtml = `<select data-id="${n.id}" class="move-select">` +
         folders.map(f => `<option value="${f.id}" ${f.id=== (n.folderId||'1')? 'selected':''}>${f.name}</option>`).join('') +
         `</select>`;
-      row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a>
+      // format added time if present
+      const added = n.added ? new Date(Number(n.added)).toLocaleString() : '';
+      const addedHtml = added ? `<span class="bm-added">${added}</span>` : '';
+      row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a> ${addedHtml}
         ${folderSelectHtml}
         <button data-id="${n.id}" class="edit">Edit</button>
         <button data-id="${n.id}" class="del">Delete</button>`;

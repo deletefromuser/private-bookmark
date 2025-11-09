@@ -19,7 +19,7 @@ async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
   const { privateBookmarks = [], privateNextId = 1 } = await getStorage();
   const id = String(privateNextId);
-  const bm = { id, title: title || url, url, folderId: folderId || '1' };
+  const bm = { id, title: title || url, url, folderId: folderId || '1', added: Date.now() };
   privateBookmarks.push(bm);
   await saveStorage({ privateBookmarks, privateNextId: privateNextId + 1 });
   // return the created bookmark for caller convenience
