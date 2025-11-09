@@ -29,10 +29,20 @@ chrome.runtime.onInstalled.addListener(() => {
       const last = recentSeen.get(url) || 0;
       if (now - last < DEBOUNCE_MS) return; // skip duplicates
       recentSeen.set(url, now);
-      // append to visitHistory
+      // append to visitHistory; if title not provided, try to fetch from tabs
+      let finalTitle = title || '';
+      if (!finalTitle) {
+        try {
+          // try to find a matching tab title
+          const tabs = await new Promise(r => chrome.tabs.query({ url }, r));
+          if (tabs && tabs.length > 0 && tabs[0].title) finalTitle = tabs[0].title;
+        } catch (e) {
+          // ignore
+        }
+      }
       const h = await new Promise(r => chrome.storage.local.get(['visitHistory'], r));
       const current = h.visitHistory || [];
-      const entry = { id: String(Date.now()) + Math.random().toString(36).slice(2,8), url, title: title || '', domain, timestamp: now };
+      const entry = { id: String(Date.now()) + Math.random().toString(36).slice(2,8), url, title: finalTitle, domain, timestamp: now };
       current.push(entry);
       await chrome.storage.local.set({ visitHistory: current });
       // remove from native history
