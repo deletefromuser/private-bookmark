@@ -17,17 +17,34 @@ function getPasswordHash() {
 async function loadBookmarks() {
   const listEl = document.getElementById('bookmarks-list');
   listEl.textContent = 'Loading...';
-  const res = await new Promise(r => chrome.storage.local.get(['privateBookmarks'], r));
+  const res = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders'], r));
   const nodes = res.privateBookmarks || [];
+  const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
   listEl.innerHTML = '';
   if (!nodes || nodes.length === 0) { listEl.textContent = 'No bookmarks'; return; }
-  nodes.forEach(n => {
-    const row = document.createElement('div');
-    row.className = 'bm-row';
-    row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a>
-      <button data-id="${n.id}" class="edit">Edit</button>
-      <button data-id="${n.id}" class="del">Delete</button>`;
-    listEl.appendChild(row);
+  // render grouped by folder
+  folders.forEach(folder => {
+    const heading = document.createElement('h3');
+    heading.textContent = folder.name;
+    listEl.appendChild(heading);
+    const folderNodes = nodes.filter(n => (n.folderId || '1') === folder.id);
+    if (folderNodes.length === 0) {
+      const p = document.createElement('div'); p.textContent = 'No bookmarks in this folder.'; listEl.appendChild(p);
+      return;
+    }
+    folderNodes.forEach(n => {
+      const row = document.createElement('div');
+      row.className = 'bm-row';
+      // include a move-to-folder select
+      const folderSelectHtml = `<select data-id="${n.id}" class="move-select">` +
+        folders.map(f => `<option value="${f.id}" ${f.id=== (n.folderId||'1')? 'selected':''}>${f.name}</option>`).join('') +
+        `</select>`;
+      row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a>
+        ${folderSelectHtml}
+        <button data-id="${n.id}" class="edit">Edit</button>
+        <button data-id="${n.id}" class="del">Delete</button>`;
+      listEl.appendChild(row);
+    });
   });
 }
 
@@ -38,7 +55,7 @@ document.getElementById('unlock').addEventListener('click', async () => {
     // no password set -> allow
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-    loadBookmarks();
+  loadBookmarks();
     return;
   }
   const hash = await sha256(pw);
@@ -79,6 +96,21 @@ document.getElementById('bookmarks-list').addEventListener('click', (e) => {
   }
 });
 
+// handle move-to-folder select changes
+document.getElementById('bookmarks-list').addEventListener('change', (e) => {
+  if (!e.target || !e.target.classList.contains('move-select')) return;
+  const id = e.target.getAttribute('data-id');
+  const newFolderId = e.target.value;
+  (async () => {
+    const { privateBookmarks = [] } = await new Promise(r => chrome.storage.local.get(['privateBookmarks'], r));
+    const bm = privateBookmarks.find(b => b.id === id);
+    if (!bm) return alert('Bookmark not found');
+    bm.folderId = newFolderId;
+    await new Promise(r => chrome.storage.local.set({ privateBookmarks }, r));
+    loadBookmarks();
+  })();
+});
+
 // initial check
 (async function(){
   const stored = await getPasswordHash();
@@ -89,3 +121,17 @@ document.getElementById('bookmarks-list').addEventListener('click', (e) => {
     authMsg.textContent = 'Enter password to view.';
   }
 })();
+
+// create folder
+document.getElementById('create-folder').addEventListener('click', async () => {
+  const name = document.getElementById('new-folder-name').value;
+  if (!name) return alert('Folder name required');
+  const res = await new Promise(r => chrome.storage.local.get(['privateFolders', 'privateFolderNextId'], r));
+  const folders = res.privateFolders || [];
+  const nextId = res.privateFolderNextId || (folders.length + 1);
+  const id = String(nextId);
+  folders.push({ id, name });
+  await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextId + 1 }, r));
+  document.getElementById('new-folder-name').value = '';
+  loadBookmarks();
+});

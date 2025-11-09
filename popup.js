@@ -15,11 +15,11 @@ function saveStorage(obj) {
   return new Promise(res => chrome.storage.local.set(obj, res));
 }
 
-async function addBookmark(title, url) {
+async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
   const { privateBookmarks = [], privateNextId = 1 } = await getStorage();
   const id = String(privateNextId);
-  const bm = { id, title: title || url, url };
+  const bm = { id, title: title || url, url, folderId: folderId || '1' };
   privateBookmarks.push(bm);
   await saveStorage({ privateBookmarks, privateNextId: privateNextId + 1 });
   // return the created bookmark for caller convenience
@@ -40,6 +40,22 @@ function normalizeUrl(u) {
     if (s.length > 1 && s.endsWith('/')) s = s.slice(0, -1);
     return s;
   }
+}
+
+// load folders into the popup select
+function loadFoldersIntoSelect() {
+  chrome.storage.local.get(['privateFolders'], (res) => {
+    const sel = document.getElementById('folder-select');
+    if (!sel) return;
+    sel.innerHTML = '';
+    const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
+    folders.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = f.name;
+      sel.appendChild(opt);
+    });
+  });
 }
 
 async function isUrlBookmarked(url) {
@@ -86,7 +102,9 @@ async function addCurrentTab() {
   addBtn.disabled = true;
   addCurrentBtn.disabled = true;
   try {
-    await addBookmark(t.title, t.url);
+  const sel = document.getElementById('folder-select');
+  const folderId = sel ? sel.value : undefined;
+  await addBookmark(t.title, t.url, folderId);
     showStatus('Bookmark added');
   } catch (err) {
     console.warn('Add current failed', err);
@@ -113,7 +131,8 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
   const addCurrentBtn = document.getElementById('add-current');
   addBtn.disabled = true;
   addCurrentBtn.disabled = true;
-  addBookmark(title, url).then(() => showStatus('Bookmark added')).catch(err => console.warn('Add failed', err)).finally(() => {
+  const folderId = document.getElementById('folder-select')?.value;
+  addBookmark(title, url, folderId).then(() => showStatus('Bookmark added')).catch(err => console.warn('Add failed', err)).finally(() => {
     addBtn.disabled = false;
     addCurrentBtn.disabled = false;
   updateCurrentTabState();
@@ -141,4 +160,6 @@ function showStatus(msg, timeout = 2500) {
 
 // initialize current-tab state when popup opens
 try { updateCurrentTabState(); } catch (e) { /* non-fatal */ }
+// load folders for folder select
+loadFoldersIntoSelect();
 // (showStatus is defined above)
