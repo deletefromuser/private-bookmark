@@ -39,7 +39,7 @@ async function loadBookmarks() {
       const row = document.createElement('div');
       row.className = 'bm-row';
       // include a move-to-folder select
-      const folderSelectHtml = `<select data-id="${n.id}" class="move-select">` +
+      const folderSelectHtml = `<select data-id="${n.id}" class="move-select form-select mb-2">` +
         folders.map(f => `<option value="${f.id}" ${f.id=== (n.folderId||'1')? 'selected':''}>${f.name}</option>`).join('') +
         `</select>`;
       // format added time if present
@@ -47,8 +47,8 @@ async function loadBookmarks() {
       const addedHtml = added ? `<span class="bm-added">${added}</span>` : '';
       row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a> ${addedHtml}
         ${folderSelectHtml}
-        <button data-id="${n.id}" class="edit">Edit</button>
-        <button data-id="${n.id}" class="del">Delete</button><hr>`;
+        <button data-id="${n.id}" class="btn btn-primary me-2">Edit</button>
+        <button data-id="${n.id}" class="btn btn-danger me-2">Delete</button><hr>`;
       listEl.appendChild(row);
     });
   });

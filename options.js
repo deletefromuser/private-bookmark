@@ -71,8 +71,8 @@ async function loadFoldersUI() {
     const row = document.createElement('div');
     row.className = 'folder-row';
     row.innerHTML = `<span class="folder-name">${f.name}</span>
-      <button data-id="${f.id}" class="rename-folder">Rename</button>
-      <button data-id="${f.id}" class="delete-folder">Delete</button>`;
+      <button data-id="${f.id}" class="rename-folder btn btn-primary me-2">Rename</button>
+      <button data-id="${f.id}" class="delete-folder btn btn-danger me-2">Delete</button>`;
     el.appendChild(row);
   });
 }
@@ -88,13 +88,13 @@ async function showDeleteFolderPrompt(folderId) {
   const promptDiv = document.createElement('div');
   promptDiv.className = 'folder-delete-prompt';
   const otherFolders = folders.filter(f => f.id !== folderId);
-  let moveSelectHtml = '<select id="delete-move-target">';
+  let moveSelectHtml = '<select id="delete-move-target form-select mb-2">';
   otherFolders.forEach(f => { moveSelectHtml += `<option value="${f.id}">${f.name}</option>`; });
   moveSelectHtml += '</select>';
   promptDiv.innerHTML = `<div>Delete folder "${folder.name}" — what to do with its bookmarks?</div>
-    <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label>
+    <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label><br>
     <label><input type="radio" name="del-action" value="move"> Move bookmarks to: ${otherFolders.length? moveSelectHtml : '<em>(no other folder)</em>'}</label>
-    <div><button id="del-confirm">Confirm</button> <button id="del-cancel">Cancel</button></div>`;
+    <div><button id="del-confirm" class="btn btn-danger me-2">Confirm</button> <button id="del-cancel" class="btn btn-secondary me-2">Cancel</button></div>`;
   const rows = el.querySelectorAll('.folder-row');
   let replaced = false;
   rows.forEach(r => {
