@@ -1,11 +1,12 @@
 /* base styles */
-body{font-family: Arial, sans-serif; padding:10px; width:320px}
+body{font-family: Arial, sans-serif; padding:10px; }
 h1{font-size:16px}
 /* viewer page wider to fit bookmark titles */
-.view-page{width:520px}
+.view-page{width: 80%;margin: auto;}
+.popup-page, .option-page{width:320px}
 input{display:block;margin:6px 0;padding:6px;width:100%}
 button{margin:4px 2px;padding:6px}
-.bm-row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.bm-row{display:flex;gap:8px;align-items:center;margin:6px 0;border-bottom: inset;}
 .bm-link{flex:1;text-decoration:none;color:#0366d6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-added{margin-left:8px;color:#666;font-size:12px}
 .folder-row{display:flex;gap:8px;align-items:center;margin:6px 0}

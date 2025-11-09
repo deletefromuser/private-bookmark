@@ -48,7 +48,7 @@ async function loadBookmarks() {
       row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a> ${addedHtml}
         ${folderSelectHtml}
         <button data-id="${n.id}" class="edit">Edit</button>
-        <button data-id="${n.id}" class="del">Delete</button>`;
+        <button data-id="${n.id}" class="del">Delete</button><hr>`;
       listEl.appendChild(row);
     });
   });
