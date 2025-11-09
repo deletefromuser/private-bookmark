@@ -14,6 +14,88 @@ function getPasswordHash() {
   return new Promise(res => chrome.storage.local.get(['passwordHash'], r => res(r.passwordHash)));
 }
 
+// load chrome bookmark folders into select
+function buildChromeFolderList(nodes, list) {
+  nodes.forEach(n => {
+    if (n.url) return; // skip bookmarks, only folders
+    list.push({ id: n.id, title: n.title });
+    if (n.children) buildChromeFolderList(n.children, list);
+  });
+}
+
+function loadChromeFoldersIntoSelect() {
+  const sel = document.getElementById('chrome-folders-select');
+  if (!sel || !chrome.bookmarks) return;
+  chrome.bookmarks.getTree((nodes) => {
+    const list = [];
+    buildChromeFolderList(nodes, list);
+    sel.innerHTML = '';
+    list.forEach(f => {
+      const opt = document.createElement('option'); opt.value = f.id; opt.textContent = f.title || f.id; sel.appendChild(opt);
+    });
+  });
+}
+
+// import all bookmark nodes (type=bookmark) under a chrome bookmark folder id
+function collectChromeBookmarks(node, out) {
+  if (!node) return;
+  if (node.url) out.push({ title: node.title, url: node.url });
+  if (node.children) node.children.forEach(c => collectChromeBookmarks(c, out));
+}
+
+document.getElementById('import-chrome').addEventListener('click', async () => {
+  const sel = document.getElementById('chrome-folders-select');
+  if (!sel || !sel.value) return alert('Select a Chrome folder to import');
+  const chromeFolderId = sel.value;
+  const statusEl = document.getElementById('import-status');
+  statusEl.textContent = 'Importing...';
+  // fetch chrome folder node
+  chrome.bookmarks.getSubTree(chromeFolderId, async (nodes) => {
+    if (!nodes || nodes.length === 0) { statusEl.textContent = 'No nodes found'; return; }
+    const root = nodes[0];
+    const collected = [];
+    collectChromeBookmarks(root, collected);
+    if (collected.length === 0) { statusEl.textContent = 'No bookmarks to import in selected folder.'; return; }
+    // create a new private folder with chrome folder name
+    const chromeFolderName = root.title || 'Imported';
+    const res = await new Promise(r => chrome.storage.local.get(['privateFolders', 'privateFolderNextId', 'privateBookmarks', 'privateNextId'], r));
+    const folders = res.privateFolders || [];
+    const nextFolderId = res.privateFolderNextId || (folders.length + 1);
+    const newFolderId = String(nextFolderId);
+    folders.push({ id: newFolderId, name: chromeFolderName });
+    const privateBookmarks = res.privateBookmarks || [];
+    let nextBmId = res.privateNextId || (privateBookmarks.length + 1);
+    collected.forEach(b => {
+      privateBookmarks.push({ id: String(nextBmId++), title: b.title, url: b.url, folderId: newFolderId });
+    });
+    await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextFolderId + 1, privateBookmarks, privateNextId: nextBmId }, r));
+    statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
+    loadBookmarks();
+  });
+});
+
+// export private bookmarks into a Chrome-compatible bookmarks HTML and trigger download
+document.getElementById('export-html').addEventListener('click', async () => {
+  const res = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders'], r));
+  const bms = res.privateBookmarks || [];
+  const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
+  // build HTML
+  let html = '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
+  folders.forEach(folder => {
+    html += `<DT><H3>${folder.name}</H3>\n<DL><p>\n`;
+    bms.filter(b => (b.folderId || '1') === folder.id).forEach(b => {
+      const added = new Date().toISOString();
+      html += `<DT><A HREF="${b.url}">${b.title || b.url}</A>\n`;
+    });
+    html += '</DL><p>\n';
+  });
+  html += '</DL><p>\n';
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'private-bookmarks.html'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
 async function loadBookmarks() {
   const listEl = document.getElementById('bookmarks-list');
   listEl.textContent = 'Loading...';
@@ -56,13 +138,15 @@ document.getElementById('unlock').addEventListener('click', async () => {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
   loadBookmarks();
+  loadChromeFoldersIntoSelect();
     return;
   }
   const hash = await sha256(pw);
   if (hash === stored) {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-    loadBookmarks();
+  loadBookmarks();
+  loadChromeFoldersIntoSelect();
   } else alert('Wrong password');
 });
 
