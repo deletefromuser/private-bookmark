@@ -133,6 +133,83 @@ async function loadBookmarks() {
   });
 }
 
+// render folders list with rename/delete controls
+async function loadFoldersUI() {
+  const el = document.getElementById('folders-list');
+  if (!el) return;
+  const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
+  const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
+  el.innerHTML = '';
+  folders.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'folder-row';
+    row.innerHTML = `<span class="folder-name">${f.name}</span>
+      <button data-id="${f.id}" class="rename-folder">Rename</button>
+      <button data-id="${f.id}" class="delete-folder">Delete</button>`;
+    el.appendChild(row);
+  });
+}
+
+// show inline prompt to delete folder: choose delete bookmarks or move them
+async function showDeleteFolderPrompt(folderId) {
+  const el = document.getElementById('folders-list');
+  const res = await new Promise(r => chrome.storage.local.get(['privateFolders', 'privateBookmarks'], r));
+  const folders = res.privateFolders || [];
+  const bookmarks = res.privateBookmarks || [];
+  const folder = folders.find(f => f.id === folderId);
+  if (!folder) return alert('Folder not found');
+  // build prompt UI
+  const promptDiv = document.createElement('div');
+  promptDiv.className = 'folder-delete-prompt';
+  // other folders for move target
+  const otherFolders = folders.filter(f => f.id !== folderId);
+  let moveSelectHtml = '<select id="delete-move-target">';
+  otherFolders.forEach(f => { moveSelectHtml += `<option value="${f.id}">${f.name}</option>`; });
+  moveSelectHtml += '</select>';
+  promptDiv.innerHTML = `<div>Delete folder "${folder.name}" — what to do with its bookmarks?</div>
+    <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label>
+    <label><input type="radio" name="del-action" value="move"> Move bookmarks to: ${otherFolders.length? moveSelectHtml : '<em>(no other folder)</em>'}</label>
+    <div><button id="del-confirm">Confirm</button> <button id="del-cancel">Cancel</button></div>`;
+  // replace folder row with prompt
+  // find the folder row
+  const rows = el.querySelectorAll('.folder-row');
+  let replaced = false;
+  rows.forEach(r => {
+    const id = r.querySelector('button')?.getAttribute('data-id');
+    if (id === folderId) {
+      r.parentNode.replaceChild(promptDiv, r);
+      replaced = true;
+    }
+  });
+  if (!replaced) { el.appendChild(promptDiv); }
+
+  document.getElementById('del-cancel').addEventListener('click', () => {
+    promptDiv.remove();
+    loadFoldersUI();
+  });
+  document.getElementById('del-confirm').addEventListener('click', async () => {
+    const action = promptDiv.querySelector('input[name="del-action"]:checked').value;
+    if (action === 'delete') {
+      // remove bookmarks in this folder
+      const newBms = bookmarks.filter(b => b.folderId !== folderId);
+      const newFolders = folders.filter(f => f.id !== folderId);
+      await new Promise(r => chrome.storage.local.set({ privateBookmarks: newBms, privateFolders: newFolders }, r));
+    } else {
+      // move bookmarks to selected target
+      const sel = document.getElementById('delete-move-target');
+      if (!sel || !sel.value) return alert('No target folder selected');
+      const targetId = sel.value;
+      const newBms = bookmarks.map(b => b.folderId === folderId ? Object.assign({}, b, { folderId: targetId }) : b);
+      const newFolders = folders.filter(f => f.id !== folderId);
+      await new Promise(r => chrome.storage.local.set({ privateBookmarks: newBms, privateFolders: newFolders }, r));
+    }
+    promptDiv.remove();
+    loadFoldersUI();
+    loadBookmarks();
+    loadChromeFoldersIntoSelect();
+  });
+}
+
 document.getElementById('unlock').addEventListener('click', async () => {
   const pw = document.getElementById('pw').value;
   const stored = await getPasswordHash();
@@ -140,8 +217,9 @@ document.getElementById('unlock').addEventListener('click', async () => {
     // no password set -> allow
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-  loadBookmarks();
-  loadChromeFoldersIntoSelect();
+    loadBookmarks();
+    loadFoldersUI();
+    loadChromeFoldersIntoSelect();
     return;
   }
   const hash = await sha256(pw);
@@ -149,6 +227,7 @@ document.getElementById('unlock').addEventListener('click', async () => {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
   loadBookmarks();
+  loadFoldersUI();
   loadChromeFoldersIntoSelect();
   } else alert('Wrong password');
 });
@@ -221,4 +300,30 @@ document.getElementById('create-folder').addEventListener('click', async () => {
   await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextId + 1 }, r));
   document.getElementById('new-folder-name').value = '';
   loadBookmarks();
+  loadFoldersUI();
+});
+
+// delegate rename/delete actions for folders
+document.getElementById('folders-list').addEventListener('click', (e) => {
+  const btn = e.target;
+  if (!btn) return;
+  if (btn.classList.contains('rename-folder')) {
+    const id = btn.getAttribute('data-id');
+    const newName = prompt('New folder name');
+    if (newName == null) return;
+    (async () => {
+      const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
+      const folders = res.privateFolders || [];
+      const f = folders.find(x => x.id === id);
+      if (!f) return alert('Folder not found');
+      f.name = newName;
+      await new Promise(r => chrome.storage.local.set({ privateFolders: folders }, r));
+      loadFoldersUI();
+      loadBookmarks();
+      loadChromeFoldersIntoSelect();
+    })();
+  } else if (btn.classList.contains('delete-folder')) {
+    const id = btn.getAttribute('data-id');
+    showDeleteFolderPrompt(id);
+  }
 });

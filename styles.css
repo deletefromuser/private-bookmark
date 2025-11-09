@@ -8,3 +8,7 @@ button{margin:4px 2px;padding:6px}
 .bm-row{display:flex;gap:8px;align-items:center;margin:6px 0}
 .bm-link{flex:1;text-decoration:none;color:#0366d6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bm-added{margin-left:8px;color:#666;font-size:12px}
+.folder-row{display:flex;gap:8px;align-items:center;margin:6px 0}
+.folder-name{flex:1;font-weight:600}
+.folder-delete-prompt{background:#fff8e1;border:1px solid #ffd54f;padding:8px;margin:6px 0}
+.folder-delete-prompt select{margin-left:8px}
