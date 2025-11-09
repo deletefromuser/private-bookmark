@@ -83,8 +83,9 @@ document.getElementById('bookmarks-list').addEventListener('click', (e) => {
   const id = e.target.getAttribute('data-id');
   if (!id) return;
   if (e.target.classList.contains('del')) {
-    if (!confirm('Delete bookmark?')) return;
-    (async () => {
+    // non-blocking confirm
+    _modal.showConfirm('Delete bookmark?').then(async (ok) => {
+      if (!ok) return;
       const { privateBookmarks = [] } = await new Promise(r => chrome.storage.local.get(['privateBookmarks'], r));
       const idx = privateBookmarks.findIndex(b => b.id === id);
       if (idx >= 0) {
@@ -92,14 +93,15 @@ document.getElementById('bookmarks-list').addEventListener('click', (e) => {
         await new Promise(r => chrome.storage.local.set({ privateBookmarks }, r));
         loadBookmarks();
       }
-    })();
+    });
   } else if (e.target.classList.contains('edit')) {
     (async () => {
-      const newTitle = prompt('New title');
-      const newUrl = prompt('New URL (leave blank to keep)');
+      const newTitle = await _modal.showTextPrompt('New title', '');
+      if (newTitle === null) return; // cancelled
+      const newUrl = await _modal.showTextPrompt('New URL (leave blank to keep)', '');
       const { privateBookmarks = [] } = await new Promise(r => chrome.storage.local.get(['privateBookmarks'], r));
       const bm = privateBookmarks.find(b => b.id === id);
-      if (!bm) return alert('Bookmark not found');
+      if (!bm) { _modal.showConfirm('Bookmark not found'); return; }
       if (newTitle != null) bm.title = newTitle;
       if (newUrl) bm.url = newUrl;
       await new Promise(r => chrome.storage.local.set({ privateBookmarks }, r));

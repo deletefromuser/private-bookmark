@@ -21,7 +21,7 @@ document.getElementById('set-password').addEventListener('click', async () => {
     return;
   }
   // require current password or master password
-  const current = prompt('Enter current password to change it (or enter master password)');
+  const current = await _modal.showTextPrompt('Enter current password to change it (or enter master password)', '');
   if (current == null) return; // cancelled
   const { passwordHash } = await getStorage();
   const currentHash = await sha256(current);
@@ -37,9 +37,9 @@ document.getElementById('set-password').addEventListener('click', async () => {
 });
 
 document.getElementById('clear-password').addEventListener('click', async () => {
-  const confirmed = confirm('Clear the password? This will allow anyone to open the View page without a password.');
+  const confirmed = await _modal.showConfirm('Clear the password? This will allow anyone to open the View page without a password.');
   if (!confirmed) return;
-  const current = prompt('Enter current password to clear it (or enter master password)');
+  const current = await _modal.showTextPrompt('Enter current password to clear it (or enter master password)', '');
   if (current == null) return; // cancelled
   const { passwordHash } = await getStorage();
   const currentHash = await sha256(current);
@@ -148,11 +148,11 @@ document.getElementById('folders-list')?.addEventListener('click', (e) => {
     (async () => {
       const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
       const folders = res.privateFolders || [];
-      const f = folders.find(x => x.id === id);
-      if (!f) return alert('Folder not found');
-      const newName = prompt('New folder name', f.name);
-      if (newName == null) return;
-      f.name = newName;
+  const f = folders.find(x => x.id === id);
+  if (!f) { await _modal.showConfirm('Folder not found'); return; }
+  const newName = await _modal.showTextPrompt('New folder name', f.name);
+  if (newName == null) return;
+  f.name = newName;
       await new Promise(r => chrome.storage.local.set({ privateFolders: folders }, r));
       loadFoldersUI();
     })();
