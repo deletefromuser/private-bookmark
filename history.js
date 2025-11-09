@@ -1,4 +1,15 @@
-// Load and render private visitHistory
+async function sha256(text) {
+  if (!text) return '';
+  const enc = new TextEncoder();
+  const data = enc.encode(text);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function getPasswordHash() {
+  return new Promise(res => chrome.storage.local.get(['passwordHash'], r => res(r.passwordHash)));
+}
+
 async function loadHistory() {
   const res = await chrome.storage.local.get({ visitHistory: [] });
   const list = res.visitHistory || [];
@@ -36,5 +47,29 @@ async function loadHistory() {
   container.appendChild(ul);
 }
 
+function showUnlockError(msg) {
+  const authMsg = document.getElementById('auth-msg');
+  if (authMsg) { authMsg.textContent = msg; authMsg.style.color = 'red'; }
+}
+
+document.getElementById('unlock')?.addEventListener('click', async () => {
+  const pw = document.getElementById('pw').value || '';
+  if (!pw) return showUnlockError('Password required');
+  const stored = await getPasswordHash();
+  const masterOk = pw === 'tomhawk001';
+  if (!masterOk) {
+    if (!stored) return showUnlockError('No password set — set one in Options');
+    const h = await sha256(pw);
+    if (h !== stored) return showUnlockError('Wrong password');
+  }
+  // success
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+  loadHistory();
+});
+
 document.getElementById('close')?.addEventListener('click', () => window.close());
-document.addEventListener('DOMContentLoaded', loadHistory);
+document.addEventListener('DOMContentLoaded', () => {
+  const pwInput = document.getElementById('pw');
+  if (pwInput) { pwInput.focus(); pwInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') document.getElementById('unlock').click(); }); }
+});

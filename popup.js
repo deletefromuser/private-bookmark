@@ -163,6 +163,10 @@ document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
 });
 
+document.getElementById('open-history-viewer')?.addEventListener('click', async () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+});
+
 // initial: popup only provides add/current/options/view functionality
 
 // small status helper
