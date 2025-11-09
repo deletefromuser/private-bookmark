@@ -77,6 +77,105 @@ async function loadFoldersUI() {
   });
 }
 
+// ------------------ History Monitoring: monitoredDomains ------------------
+async function loadMonitoredDomainsUI() {
+  const data = await chrome.storage.local.get({ monitoredDomains: [] });
+  const list = data.monitoredDomains || [];
+  const container = document.getElementById('monitored-domains-list');
+  container.innerHTML = '';
+  list.forEach(d => {
+    const badge = document.createElement('span');
+    badge.className = 'badge bg-secondary me-1 mb-1 d-inline-flex align-items-center';
+    badge.textContent = d;
+    const del = document.createElement('button');
+    del.className = 'btn-close btn-close-white ms-2';
+    del.style.opacity = '0.8';
+    del.addEventListener('click', async () => {
+      const newList = list.filter(x => x !== d);
+      await chrome.storage.local.set({ monitoredDomains: newList });
+      loadMonitoredDomainsUI();
+    });
+    const wrapper = document.createElement('span');
+    wrapper.appendChild(badge);
+    wrapper.appendChild(del);
+    container.appendChild(wrapper);
+  });
+}
+
+document.getElementById('add-monitored-domain')?.addEventListener('click', async () => {
+  const input = document.getElementById('new-monitored-domain');
+  const domain = input.value.trim();
+  if (!domain) return;
+  const data = await chrome.storage.local.get({ monitoredDomains: [] });
+  const list = data.monitoredDomains || [];
+  if (!list.includes(domain)) {
+    list.push(domain);
+    await chrome.storage.local.set({ monitoredDomains: list });
+    input.value = '';
+    loadMonitoredDomainsUI();
+  }
+});
+
+document.getElementById('clear-monitored-domains')?.addEventListener('click', async () => {
+  const ok = await window._modal.showConfirm('Clear all monitored domains? This cannot be undone.');
+  if (!ok) return;
+  await chrome.storage.local.set({ monitoredDomains: [] });
+  loadMonitoredDomainsUI();
+});
+
+// ensure key exists on load
+chrome.storage.local.get(['monitoredDomains', 'visitHistory'], (res) => {
+  if (!Array.isArray(res.monitoredDomains)) chrome.storage.local.set({ monitoredDomains: [] });
+  if (!Array.isArray(res.visitHistory)) chrome.storage.local.set({ visitHistory: [] });
+});
+
+// initialize UI on options load
+document.addEventListener('DOMContentLoaded', () => {
+  loadMonitoredDomainsUI();
+  loadVisitHistoryUI();
+});
+
+async function loadVisitHistoryUI() {
+  const res = await chrome.storage.local.get({ visitHistory: [] });
+  const list = res.visitHistory || [];
+  const container = document.getElementById('visit-history-list');
+  container.innerHTML = '';
+  if (list.length === 0) {
+    container.textContent = '(no visits recorded yet)';
+    return;
+  }
+  const ul = document.createElement('ul');
+  ul.className = 'list-group';
+  list.slice().reverse().forEach(e => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    li.textContent = `${new Date(e.timestamp).toLocaleString()} — ${e.domain} — ${e.title || e.url}`;
+    ul.appendChild(li);
+  });
+  container.appendChild(ul);
+}
+
+document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
+  const ok = await window._modal.showConfirm('Clear private visit history? This cannot be undone.');
+  if (!ok) return;
+  await chrome.storage.local.set({ visitHistory: [] });
+  loadVisitHistoryUI();
+});
+
+document.getElementById('export-visit-history')?.addEventListener('click', async () => {
+  const res = await chrome.storage.local.get({ visitHistory: [] });
+  const data = res.visitHistory || [];
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'visit-history.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
 // inline delete prompt similar to view.js
 async function showDeleteFolderPrompt(folderId) {
   const el = document.getElementById('folders-list');

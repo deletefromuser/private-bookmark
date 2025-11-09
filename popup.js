@@ -143,6 +143,21 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
 
 document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
+  document.getElementById('add-current-domain')?.addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) return showStatus('No active tab URL');
+    const url = new URL(tab.url);
+    const domain = url.hostname.replace(/^www\./, '');
+    const data = await chrome.storage.local.get({ monitoredDomains: [] });
+    const list = data.monitoredDomains || [];
+    if (!list.includes(domain)) {
+      list.push(domain);
+      await chrome.storage.local.set({ monitoredDomains: list });
+      showStatus('Domain added to monitored list');
+    } else {
+      showStatus('Domain is already monitored');
+    }
+  });
 
 document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });

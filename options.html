@@ -34,6 +34,26 @@
     <button id="export-html" class="btn btn-sm btn-outline-primary">Export as HTML</button>
     <div id="import-status" aria-live="polite"></div>
   </section>
+    <section>
+      <h3>History Monitoring</h3>
+      <div class="mb-3">
+        <p>Monitored domains: visits to these domains will be recorded to the extension's private history and removed from the browser's native history.</p>
+        <div id="monitored-domains-list" class="mb-2"></div>
+        <div class="input-group mb-2">
+          <input id="new-monitored-domain" class="form-control" placeholder="example.com" />
+          <button id="add-monitored-domain" class="btn btn-outline-primary">Add Domain</button>
+        </div>
+        <button id="clear-monitored-domains" class="btn btn-outline-danger">Clear All Monitored Domains</button>
+      </div>
+    </section>
+
+      <section>
+        <h3>Private Visit History</h3>
+        <p>Visits recorded for monitored domains (native history is removed).</p>
+        <div id="visit-history-list" class="mb-2"></div>
+        <button id="export-visit-history" class="btn btn-sm btn-outline-primary">Export Visit History (JSON)</button>
+        <button id="clear-visit-history" class="btn btn-sm btn-outline-danger ms-2">Clear Visit History</button>
+      </section>
   <script src="options.js"></script>
 </body>
 </html>

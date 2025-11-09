@@ -20,7 +20,9 @@ function getPasswordHash() {
 async function loadBookmarks() {
   const listEl = document.getElementById('bookmarks-list');
   listEl.textContent = 'Loading...';
-  const res = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders'], r));
+    const res = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders'], r));
+    // const pw = document.getElementById('password').value || '';
+    // if (!pw) return showUnlockError('Password required');
   const nodes = res.privateBookmarks || [];
   const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
   listEl.innerHTML = '';
@@ -66,7 +68,8 @@ document.getElementById('unlock').addEventListener('click', async () => {
     loadBookmarks();
     return;
   }
-  const hash = await sha256(pw);
+    const hash = await sha256(pw);
+    if (!pw) return showUnlockError('Password required');
   if (hash === stored) {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';

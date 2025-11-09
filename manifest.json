@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Private Bookmark",
   "version": "1.0",
-  "description": "Add/edit/delete/view private bookmarks. Password-protected view.",
-  "permissions": ["storage", "tabs", "bookmarks"],
+  "description": "Add/edit/delete/view private bookmarks. Password-protected view. Optional history monitoring.",
+  "permissions": ["storage", "tabs", "bookmarks", "history"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Private Bookmark"
