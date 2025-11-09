@@ -186,7 +186,7 @@ function loadChromeFoldersIntoSelect() {
 
 function collectChromeBookmarks(node, out) {
   if (!node) return;
-  if (node.url) out.push({ title: node.title, url: node.url });
+  if (node.url) out.push({ title: node.title, url: node.url, dateAdded: node.dateAdded });
   if (node.children) node.children.forEach(c => collectChromeBookmarks(c, out));
 }
 
@@ -211,7 +211,8 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
     const privateBookmarks = res.privateBookmarks || [];
     let nextBmId = res.privateNextId || (privateBookmarks.length + 1);
     collected.forEach(b => {
-      privateBookmarks.push({ id: String(nextBmId++), title: b.title, url: b.url, folderId: newFolderId });
+      const added = b.dateAdded ? Number(b.dateAdded) : Date.now();
+      privateBookmarks.push({ id: String(nextBmId++), title: b.title, url: b.url, folderId: newFolderId, added });
     });
     await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextFolderId + 1, privateBookmarks, privateNextId: nextBmId }, r));
     if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
