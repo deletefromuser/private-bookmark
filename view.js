@@ -309,13 +309,13 @@ document.getElementById('folders-list').addEventListener('click', (e) => {
   if (!btn) return;
   if (btn.classList.contains('rename-folder')) {
     const id = btn.getAttribute('data-id');
-    const newName = prompt('New folder name');
-    if (newName == null) return;
     (async () => {
       const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
       const folders = res.privateFolders || [];
       const f = folders.find(x => x.id === id);
       if (!f) return alert('Folder not found');
+      const newName = prompt('New folder name', f.name);
+      if (newName == null) return;
       f.name = newName;
       await new Promise(r => chrome.storage.local.set({ privateFolders: folders }, r));
       loadFoldersUI();
