@@ -135,6 +135,15 @@ document.addEventListener('DOMContentLoaded', () => {
   loadVisitHistoryUI();
 });
 
+document.getElementById('open-visit-history-viewer')?.addEventListener('click', () => {
+  if (chrome.runtime.openOptionsPage) {
+    // open as a tab using runtime API
+    chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+  } else {
+    window.open('history.html', '_blank');
+  }
+});
+
 async function loadVisitHistoryUI() {
   const res = await chrome.storage.local.get({ visitHistory: [] });
   const list = res.visitHistory || [];
