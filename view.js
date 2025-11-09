@@ -64,8 +64,6 @@ document.getElementById('unlock').addEventListener('click', async () => {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
     loadBookmarks();
-    loadFoldersUI();
-    loadChromeFoldersIntoSelect();
     return;
   }
   const hash = await sha256(pw);
@@ -73,8 +71,6 @@ document.getElementById('unlock').addEventListener('click', async () => {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
   loadBookmarks();
-  loadFoldersUI();
-  loadChromeFoldersIntoSelect();
   } else alert('Wrong password');
 });
 
