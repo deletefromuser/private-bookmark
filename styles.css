@@ -16,7 +16,7 @@ button{margin:4px 2px;padding:6px}
 .folder-name{flex:1;font-weight:600}
 .folder-delete-prompt{background:#fff8e1;border:1px solid #ffd54f;padding:8px;margin:6px 0}
 .folder-delete-prompt select{margin-left:8px}
-[name=del-action] { display: inline-block; width:unset;}
+[name=del-action],.move-select, #delete-move-target { display: inline-block; width:unset;}
 /* modal styles */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:9999}
 .modal-box{background:#fff;border-radius:6px;padding:12px;max-width:480px;width:90%;box-shadow:0 6px 24px rgba(0,0,0,0.3)}

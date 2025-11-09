@@ -88,7 +88,7 @@ async function showDeleteFolderPrompt(folderId) {
   const promptDiv = document.createElement('div');
   promptDiv.className = 'folder-delete-prompt';
   const otherFolders = folders.filter(f => f.id !== folderId);
-  let moveSelectHtml = '<select id="delete-move-target form-select mb-2">';
+  let moveSelectHtml = '<select id="delete-move-target" class="form-select mb-2">';
   otherFolders.forEach(f => { moveSelectHtml += `<option value="${f.id}">${f.name}</option>`; });
   moveSelectHtml += '</select>';
   promptDiv.innerHTML = `<div>Delete folder "${folder.name}" — what to do with its bookmarks?</div>
