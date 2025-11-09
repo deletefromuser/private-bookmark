@@ -286,6 +286,15 @@ document.getElementById('bookmarks-list').addEventListener('change', (e) => {
   } else {
     authMsg.textContent = 'Enter password to view.';
   }
+  // focus password input for quick typing
+  const pwInput = document.getElementById('pw');
+  if (pwInput) {
+    pwInput.focus();
+    // submit on Enter
+    pwInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') document.getElementById('unlock').click();
+    });
+  }
 })();
 
 // create folder
