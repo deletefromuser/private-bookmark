@@ -132,30 +132,9 @@ chrome.storage.local.get(['monitoredDomains', 'visitHistory'], (res) => {
 // initialize UI on options load
 document.addEventListener('DOMContentLoaded', () => {
   loadMonitoredDomainsUI();
-  loadVisitHistoryUI();
 });
 
 // Open visit history viewer moved to popup
-
-async function loadVisitHistoryUI() {
-  const res = await chrome.storage.local.get({ visitHistory: [] });
-  const list = res.visitHistory || [];
-  const container = document.getElementById('visit-history-list');
-  container.innerHTML = '';
-  if (list.length === 0) {
-    container.textContent = '(no visits recorded yet)';
-    return;
-  }
-  const ul = document.createElement('ul');
-  ul.className = 'list-group';
-  list.slice().reverse().forEach(e => {
-    const li = document.createElement('li');
-    li.className = 'list-group-item';
-    li.textContent = `${new Date(e.timestamp).toLocaleString()} — ${e.domain} — ${e.title || e.url}`;
-    ul.appendChild(li);
-  });
-  container.appendChild(ul);
-}
 
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
   const ok = await window._modal.showConfirm('Clear private visit history? This cannot be undone.');
