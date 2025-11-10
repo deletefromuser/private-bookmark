@@ -72,4 +72,5 @@ document.getElementById('close')?.addEventListener('click', () => window.close()
 document.addEventListener('DOMContentLoaded', () => {
   const pwInput = document.getElementById('pw');
   if (pwInput) { pwInput.focus(); pwInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') document.getElementById('unlock').click(); }); }
+  document.getElementById('refresh-history')?.addEventListener('click', () => { try { loadHistory(); } catch (e) { console.warn('Refresh history failed', e); } });
 });

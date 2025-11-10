@@ -56,6 +56,11 @@ async function loadBookmarks() {
   });
 }
 
+// Refresh button handler - call loadBookmarks when clicked
+document.getElementById('refresh-bookmarks')?.addEventListener('click', () => {
+  try { loadBookmarks(); } catch (e) { console.warn('Refresh bookmarks failed', e); }
+});
+
 // folder and import/export UI moved to options page
 
 document.getElementById('unlock').addEventListener('click', async () => {
