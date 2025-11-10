@@ -3,7 +3,7 @@ body{font-family: 'Noto Sans JP', 'Noto Sans CJK JP', system-ui, -apple-system, 
 h1{font-size:16px}
 /* viewer page wider to fit bookmark titles */
 .view-page{width: 80%;margin: auto;}
-.popup-page{width:320px}
+.popup-page{width:500px}
 .option-page{width:540px}
 /* let bootstrap style form controls, keep fallback sizing */
 /* input, select, textarea{display:block;margin:6px 0;padding:6px;width:100%} */
