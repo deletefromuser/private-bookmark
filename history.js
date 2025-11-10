@@ -42,6 +42,24 @@ async function loadHistory() {
     small.textContent = `${e.domain} — ${new Date(e.timestamp).toLocaleString()}`;
     left.appendChild(small);
     li.appendChild(left);
+    // delete button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-danger ms-2';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', async () => {
+      const ok = await window._modal.showConfirm('Delete this history entry? This cannot be undone.');
+      if (!ok) return;
+      // remove from storage by id
+      const res2 = await chrome.storage.local.get({ visitHistory: [] });
+      const arr = res2.visitHistory || [];
+      const idx = arr.findIndex(x => x.id === e.id);
+      if (idx >= 0) {
+        arr.splice(idx, 1);
+        await chrome.storage.local.set({ visitHistory: arr });
+        loadHistory();
+      }
+    });
+    li.appendChild(delBtn);
     ul.appendChild(li);
   });
   container.appendChild(ul);
