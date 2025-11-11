@@ -91,6 +91,8 @@ async function loadMonitoredDomainsUI() {
     del.className = 'btn-close btn-close-white ms-2';
     del.style.opacity = '0.8';
     del.addEventListener('click', async () => {
+      const ok = await window._modal.showConfirm(`Remove monitored domain "${d}"?`);
+      if (!ok) return;
       const newList = list.filter(x => x !== d);
       await chrome.storage.local.set({ monitoredDomains: newList });
       loadMonitoredDomainsUI();
