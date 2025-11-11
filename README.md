@@ -1,132 +1,94 @@
-
-Private Bookmark - Chrome MV3 Extension
+# Private Bookmark - Chrome MV3 Extension
 
 Overview
 --------
-Private Bookmark stores bookmarks inside the extension using `chrome.storage.local` (local-first, private storage). This release adds folder support, import/export, and UX improvements. The extension uses a Popup for quick adds, a View page for browsing/editing bookmarks, and an Options page for settings and management.
+Private Bookmark stores bookmarks and a private visit history inside the extension using `chrome.storage.local`. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.
 
-Highlights
-----------
-- Storage: bookmarks are stored under `privateBookmarks` as objects { id, title, url, folderId, added } and a `privateFolders` array stores folder objects { id, name }.
-- Added timestamp: bookmarks include an `added` numeric timestamp (ms since epoch). New bookmarks use Date.now(); imports preserve Chrome's `dateAdded` when present.
-- Folders & management: folder creation, rename and delete (with move-or-delete options for contained bookmarks) are available on the Options page (`options.html` / `options.js`).
-- Import / Export: options page supports importing from Chrome's bookmark tree (requires `bookmarks` permission) and exporting private bookmarks to a Chrome-compatible HTML file.
-- Password: password handling is on the Options page. Passwords are hashed (SHA-256) and changing/clearing requires the current password or a developer recovery master password (remove/replace for production).
-- UX: non-blocking in-page modals replace blocking window.prompt/confirm calls. Bootstrap 5 and Google Noto fonts are used for consistent styling and CJK-capable typography.
+Structure
+---------
+- Popup: quick-add UI and shortcuts (add current tab, open view or options).
+- View page: password-protected bookmark viewer and editor (`view.html` / `view.js`).
+- Options page: settings, folders, import/export, monitored domains, and private visit history management (`options.html` / `options.js`).
+- Background service worker: initialization and history monitoring (`background.js`).
 
-Install
--------
-1. Open chrome://extensions
-2. Enable Developer mode
-3. Click "Load unpacked" and select this folder
+Key features
+------------
+- Private bookmarks stored in `chrome.storage.local` under `privateBookmarks` with fields: { id, title, url, folderId, added }.
+- Folder support for organizing private bookmarks.
+- Import from Chrome bookmarks (requires `bookmarks` permission) and export to an HTML file.
+- Password-protected viewer: password hash stored under `passwordHash` (SHA-256). Changing/clearing requires the current password or the developer recovery master password (remove or replace for production).
+- Private Visit History: monitor selected domains, record visits to `visitHistory` in extension storage, and remove the visited URL from the browser's native history.
+- History Viewer: a password-protected viewer (`history.html` / `history.js`) to inspect and manage recorded visits (refresh and delete entries supported).
+- Non-blocking modal helpers (`modal.js`) replace blocking prompts for better UX.
+- Bootstrap 5 + Google Noto fonts for styling and CJK support.
 
-How to use
-----------
-- Popup (quick add):
-	- Add Title + URL or click Add Current Tab to save the active tab.
-	- The Add Current Tab button is disabled when that URL is already saved.
-	- Use Open Options to manage passwords, folders, and import/export.
-	- Use Open View Page to browse and edit bookmarks (password-protected if set).
+Permissions
+-----------
+- `storage` — persist bookmarks, folders, password hash, monitored domains, and private visit history.
+- `tabs` — read current tab URL/title for quick-add and monitoring helpers.
+- `bookmarks` — import from Chrome's bookmark tree.
+- `history` — read native history titles (before removal) and remove visited URLs from browser history when recording private visit entries.
 
-- Options page (management):
-	- Create, rename, and delete folders. Deleting a folder prompts whether to delete bookmarks inside or move them to another folder.
-	- Import bookmarks from a selected Chrome bookmark folder (preserves `dateAdded` where available).
-	- Export private bookmarks to a Chrome-compatible HTML file (simple DL with folder grouping).
-	- Set/clear password (change/clear requires current password or master password).
+Security considerations
+-----------------------
+- Passwords are hashed with SHA-256 and stored locally. This is not a secure secret storage for production use; consider OS-level secure storage or user-key encryption for serious deployments.
+- The extension contains a developer master password (`tomhawk001`) for recovery during development. Remove or replace this before any public distribution.
+- The extension reads from and deletes entries in the browser history when a monitored domain is visited. Ensure users understand this behavior when enabling domain monitoring.
 
-Storage schema
+How history monitoring works
+---------------------------
+- Users add domains to the "Monitored domains" list on the Options page.
+- The background worker listens for completed navigations. When a page on a monitored domain finishes loading, the worker:
+	- Looks up the browser's native history to find the title for that URL (if present).
+	- If no native history title is available, it attempts to read the active tab's title.
+	- Saves a private visit entry to `visitHistory`: { id, url, title, domain, timestamp }.
+	- Deletes the URL from the browser's native history via `chrome.history.deleteUrl`.
+
+History Viewer
 --------------
-- `privateBookmarks`: array of { id: string, title: string, url: string, folderId: string, added: number }
-- `privateNextId`: number (next id to use)
-- `privateFolders`: array of { id: string, name: string }
-- `privateFolderNextId`: number
-- `passwordHash`: string (SHA-256 hex)
+- The History Viewer (`history.html`) is password-protected and requires the same password as the main bookmark viewer.
+- It lists recorded visits newest-first, shows title/domain/timestamp, and provides these actions:
+	- Click title: open the URL in a new tab.
+	- Refresh: re-read `visitHistory` from storage.
+	- Delete: remove a single history entry (with confirmation).
 
-Security notes
---------------
-- Passwords are stored as a SHA-256 hash in extension local storage. This is NOT a secure secret management approach for production — consider OS-level key stores or encrypting with a user-supplied key.
-- A built-in master password exists for recovery in developer builds; remove or secure this in production.
+UI/Usage
+--------
+- Popup:
+	- Add a bookmark or add the current tab.
+	- Monitor the current domain (adds it to Monitored domains in Options).
+	- Open View Page (bookmark viewer) or Open Options.
+	- Open History Viewer (opens password prompt then the viewer on success).
 
-Development & UI
-----------------
-- The UI uses Bootstrap 5 and Google Noto fonts for consistent, CJK-capable typography.
-- Blocking native prompts were replaced with a small in-page modal helper (`modal.js`) which returns Promises.
+- View Page:
+	- Requires password to unlock each time.
+	- Shows bookmarks grouped by folder and includes a Refresh button to reload the list.
+
+- Options Page:
+	- Manage password and folders.
+	- Import and export bookmarks.
+	- Manage Monitored domains (per-domain delete with confirmation).
+	- View the private visit history list and export or clear it.
 
 Testing checklist
 -----------------
-1. Load the unpacked extension in Developer mode.
-2. Add a bookmark via the popup or view page and confirm it appears in the View page with an "added" timestamp.
-3. Create folders in Options, move bookmarks between folders, and test rename/delete flows (including move vs delete behavior).
-4. Import a Chrome bookmark folder from Options (requires bookmarks permission) and verify `added` timestamps are preserved when possible.
-5. Export the private bookmarks via Options and confirm download of a bookmarks HTML file.
+1. Load the extension unpacked in `chrome://extensions` (Developer mode).
+2. Ensure permissions include `storage`, `tabs`, `bookmarks`, and `history`.
+3. Add a domain to Monitored domains in Options.
+4. Visit a page on that domain and wait for it to fully load. Confirm an entry appears in Private Visit History and the same URL is removed from the browser's native history.
+5. Open History Viewer via Popup -> Open History Viewer, unlock with your password, and verify refresh and delete operations.
+6. Test import/export flows and folder management in Options.
 
-Next steps / improvements
-------------------------
-- Replace the built-in master password recovery with a safer option (backup key, export/import of encrypted data).
-- Improve deduplication and URL normalization.
-- Add automated tests for storage helpers and import/export routines.
-
-Contact
--------
-This is a demo extension. If you want improvements or tests added, open an issue or request changes.
-
-TODO
-----
-- Consider bundling fonts and Bootstrap locally to avoid CDN dependency.
-- Add unit tests and end-to-end smoke tests for import/export flows.
-- Optionally preserve folder trees from Chrome imports instead of flattening into a single folder.
-
-Install
--------
-1. Open chrome://extensions
-2. Enable Developer mode
-3. Click "Load unpacked" and select this folder
-
-How to use
-----------
-- Popup (icon):
-	- Use the Add form to save a bookmark.
-	- Click Add Current Tab to save the active tab; the button is disabled when the current tab is already saved.
-	- Click Open Options to manage the password.
-	- Click Open View Page to see and edit saved bookmarks (password required if set).
-
-- Options page:
-	- Set or change the password. To change or clear, you'll be prompted for the current password or you can enter the master password `tomhawk001`.
-
-Storage schema
---------------
-- `privateBookmarks`: array of { id: string, title: string, url: string }
-- `privateNextId`: number (next id to use)
-- `passwordHash`: string (SHA-256 hex)
-
-Security notes
---------------
-- Passwords are stored as a SHA-256 hash in extension local storage. This is NOT a secure secret management approach for production — consider OS-level key stores or encrypting with a user-supplied key.
-- A built-in master password (`tomhawk001`) exists in code to allow recovery; remove or secure this for real deployments.
-
-Testing checklist
+Development notes
 -----------------
-1. Load unpacked extension in Developer mode.
-2. Open a tab with a URL you want to save and click the extension. "Add Current Tab" should be enabled if not already saved.
-3. Click Add Current Tab — it should disable while saving, then show "Bookmark added" and the button state should update.
-4. Open a tab known to be saved — the popup should disable Add Current Tab and the badge should show a star.
-5. Open Options and set/clear password; confirm change requires current password or master password.
+- The background service worker uses `webNavigation.onCompleted` and `tabs.onUpdated` fallback to detect completed page loads.
+- The code tries to read native history titles (via `chrome.history.search`) before deleting the URL so the private visit entry preserves the browser's title.
+- For single-page apps that update titles after load, consider adding a short delay before recording or listening for subsequent `tabs.onUpdated` title changes and updating `visitHistory`.
 
-Next steps / improvements
-------------------------
-- Use UUIDs instead of a numeric counter for bookmark ids.
-- Replace the hard-coded master password with a safer recovery mechanism.
-- Improve URL normalization (strip www, canonicalize trailing slashes, query param handling) to avoid duplicates.
-- Add unit tests for storage helpers.
+Contributing
+------------
+Pull requests are welcome. Please include tests for storage helpers or a small manual test plan for UI changes.
 
-Contact
+License
 -------
-This is a small demo. If you want improvements or tests added, open an issue or request changes.
-
-TODO
-----
-- Add bookmark folder support in the private storage (create named folders, move bookmarks between folders).
-- Implement import from Chrome bookmarks (map Chrome bookmarks into `privateBookmarks` and optionally into folders).
-- Implement export to Chrome bookmarks/HTML so users can export their private bookmarks back into the browser or save a backup HTML file.
-- Add UI in popup or view page to create/manage folders and to trigger import/export.
-- Add unit tests for storage helpers and normalization logic.
+MIT
