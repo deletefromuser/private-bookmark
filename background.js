@@ -46,15 +46,16 @@ chrome.runtime.onInstalled.addListener(() => {
       current.push(entry);
       await chrome.storage.local.set({ visitHistory: current });
       // remove from native history
-      try { chrome.history.deleteUrl({ url }); } catch (e) { console.warn('Failed to delete native history url', e); }
+      try {  chrome.history.search({"maxResults":5}).then(list => {console.log(JSON.stringify());}); chrome.history.deleteUrl({ url }); } catch (e) { console.warn('Failed to delete native history url', e); }
     } catch (e) {
       console.warn('handlePossibleVisit parse failed', e);
     }
   }
 
-  // listen for completed navigations (webNavigation requires 'webNavigation' permission in some contexts, but onCommitted is sufficient for many cases)
-  chrome.webNavigation?.onCommitted?.addListener((details) => {
+  // listen for navigations completed (fires when the document finishes loading)
+  chrome.webNavigation?.onCompleted?.addListener((details) => {
     if (details && details.url && details.frameId === 0) {
+      // pass empty title; handlePossibleVisit will query the tab title if needed
       handlePossibleVisit(details.url, '');
     }
   });
