@@ -88,7 +88,7 @@ async function loadMonitoredDomainsUI() {
     badge.className = 'badge bg-secondary me-1 mb-1 d-inline-flex align-items-center';
     badge.textContent = d;
     const del = document.createElement('button');
-    del.className = 'btn-close btn-close-white ms-2';
+    del.className = 'btn-close btn-close-black ms-2';
     del.style.opacity = '0.8';
     del.addEventListener('click', async () => {
       const ok = await window._modal.showConfirm(`Remove monitored domain "${d}"?`);
