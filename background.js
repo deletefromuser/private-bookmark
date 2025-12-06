@@ -81,6 +81,51 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     setTimeout(() => {
       handlePossibleVisit(tab.url, tab.title);
     }, 2000);
-    
   }
 });
+
+
+chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
+  console.log(data);
+  if (data.action === 'QUERY') {
+    exec(data.payload.sql).then(result => {
+      console.log(result);
+      sendResponse({ status: 'success', action: 'QUERY', data: result });
+    });
+  }
+  return true;
+});
+
+// async function handleMsg(sendResponse, data) {
+//   await exec(data.payload.sql).then(result => {
+//     console.log(result);
+//     sendResponse({ status: 'success', action: 'QUERY', data: result });
+//   });
+// };
+
+import SQLiteESMFactory from './wa-sqlite/dist/wa-sqlite-async.mjs';
+import * as SQLite from './wa-sqlite/src/sqlite-api.js';
+import { IDBBatchAtomicVFS as MyVFS } from './wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
+
+async function exec(sql) {
+  // Initialize SQLite.
+  const module = await SQLiteESMFactory();
+  const sqlite3 = SQLite.Factory(module);
+
+  // Register a custom file system.
+  const vfs = await MyVFS.create('hello', module);
+  // @ts-ignore
+  sqlite3.vfs_register(vfs, true);
+
+  // Open the database.
+  const db = await sqlite3.open_v2('test');
+  const results = [];
+  await sqlite3.exec(db, sql, (row, columns) => {
+    if (columns != results.at(-1)?.columns) {
+      results.push({ columns, rows: [] });
+    }
+    results.at(-1).rows.push(row);
+  });
+  return results;
+}
+

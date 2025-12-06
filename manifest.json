@@ -8,6 +8,9 @@
     "96": "icons/logo_v1.png"
   },
   "permissions": ["storage", "tabs", "bookmarks", "history"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_title": "Private Bookmark",
@@ -18,7 +21,8 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js", 
+    "type": "module"
   }
   ,
   "options_ui": {

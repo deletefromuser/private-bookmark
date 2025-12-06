@@ -1,0 +1,28 @@
+{
+  "name": "private-bookmark",
+  "version": "1.0.0",
+  "description": "Overview\r --------\r Private Bookmark stores bookmarks and a private visit history inside the extension using `chrome.storage.local`. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "parcel watch *.html *.js *.css --no-cache --dist-dir build",
+    "build": "parcel build *.html *.js *.css --no-cache --dist-dir build --no-source-maps && copyfiles manifest.json icons/* build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deletefromuser/private-bookmark.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/deletefromuser/private-bookmark/issues"
+  },
+  "homepage": "https://github.com/deletefromuser/private-bookmark#readme",
+  "dependencies": {
+    "@vlcn.io/wa-sqlite": "^0.22.0"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "parcel": "^2.16.1"
+  }
+}

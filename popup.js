@@ -1,9 +1,21 @@
+// 发送查询命令
+async function runQuery(sql) {
+  return chrome.runtime.sendMessage({
+    action: 'QUERY',
+    payload: { sql: sql }
+  }).then(response => {
+    if (response.status === 'success' && response.action === 'QUERY') {
+      console.log("查询结果:", response.data);
+    }
+  });
+}
+
 async function sha256(text) {
   if (!text) return '';
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Storage-backed bookmarks helpers
@@ -102,9 +114,9 @@ async function addCurrentTab() {
   addBtn.disabled = true;
   addCurrentBtn.disabled = true;
   try {
-  const sel = document.getElementById('folder-select');
-  const folderId = sel ? sel.value : undefined;
-  await addBookmark(t.title, t.url, folderId);
+    const sel = document.getElementById('folder-select');
+    const folderId = sel ? sel.value : undefined;
+    await addBookmark(t.title, t.url, folderId);
     showStatus('Bookmark added');
   } catch (err) {
     console.warn('Add current failed', err);
@@ -135,7 +147,7 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
   addBookmark(title, url, folderId).then(() => showStatus('Bookmark added')).catch(err => console.warn('Add failed', err)).finally(() => {
     addBtn.disabled = false;
     addCurrentBtn.disabled = false;
-  updateCurrentTabState();
+    updateCurrentTabState();
   });
   document.getElementById('title').value = '';
   document.getElementById('url').value = '';
@@ -143,24 +155,33 @@ document.getElementById('add-bookmark').addEventListener('click', () => {
 
 document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
-  document.getElementById('add-current-domain')?.addEventListener('click', async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.url) return showStatus('No active tab URL');
-    const url = new URL(tab.url);
-    const domain = url.hostname.replace(/^www\./, '');
-    const data = await chrome.storage.local.get({ monitoredDomains: [] });
-    const list = data.monitoredDomains || [];
-    if (!list.includes(domain)) {
-      list.push(domain);
-      await chrome.storage.local.set({ monitoredDomains: list });
-      showStatus('Domain added to monitored list');
-    } else {
-      showStatus('Domain is already monitored');
-    }
-  });
+document.getElementById('add-current-domain')?.addEventListener('click', async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab || !tab.url) return showStatus('No active tab URL');
+  const url = new URL(tab.url);
+  const domain = url.hostname.replace(/^www\./, '');
+  const data = await chrome.storage.local.get({ monitoredDomains: [] });
+  const list = data.monitoredDomains || [];
+  if (!list.includes(domain)) {
+    list.push(domain);
+    await chrome.storage.local.set({ monitoredDomains: list });
+    showStatus('Domain added to monitored list');
+  } else {
+    showStatus('Domain is already monitored');
+  }
+});
 
 document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
+
+  // 示例：插入数据
+runQuery("CREATE TABLE IF NOT EXISTS t(x PRIMARY KEY, y)").then(response => {
+    
+  });
+runQuery("INSERT OR REPLACE INTO t VALUES ('good', 'bad1'), ('hot', 'cold'), ('up', 'down')").then(item => {});
+
+// 示例：查询所有数据
+runQuery("SELECT * FROM t").then(item => {});
 });
 
 document.getElementById('open-history-viewer')?.addEventListener('click', async () => {
