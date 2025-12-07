@@ -65,6 +65,15 @@ async function handlePossibleVisit(url, title) {
   }
 }
 
+// Attempt automatic migration at startup (safe: routine checks for a migration flag)
+(async () => {
+  try {
+    await migrateLocalStorageToSQLite();
+  } catch (e) {
+    console.error('Automatic migration failed', e);
+  }
+})();
+
 // listen for navigations completed (fires when the document finishes loading)
 chrome.webNavigation?.onCompleted?.addListener((details) => {
   if (details && details.url && details.frameId === 0) {
@@ -91,7 +100,27 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
     exec(data.payload.sql).then(result => {
       console.log(result);
       sendResponse({ status: 'success', action: 'QUERY', data: result });
+    }).catch(err => {
+      console.log("QUERY fail");
+      sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
     });
+  } else if (data.action === 'MIGRATE_DB') {
+    console.log("mi start");
+    // run migration and reply when done
+    migrateLocalStorageToSQLite().then(() => {
+      exec("select * from visit_history").then(result => {
+        console.log(result);
+      }).catch(err => {
+        console.log("QUERY fail");
+        sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
+      });
+      sendResponse({ status: 'success', action: 'MIGRATE_DB' });
+    }).catch(err => {
+      console.log("mi fail");
+      sendResponse({ status: 'error', action: 'MIGRATE_DB', message: String(err) });
+    });
+  } else {
+    sendResponse({ status: 'error', action: 'unknown action' });
   }
   return true;
 });
@@ -127,5 +156,107 @@ async function exec(sql) {
     results.at(-1).rows.push(row);
   });
   return results;
+}
+
+// Create DB schema if not present
+async function createSchema() {
+  const stmts = [
+    `PRAGMA journal_mode = WAL;`,
+    `CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);`,
+    `CREATE TABLE IF NOT EXISTS folders(id TEXT PRIMARY KEY, name TEXT);`,
+    `CREATE TABLE IF NOT EXISTS bookmarks(id TEXT PRIMARY KEY, title TEXT, url TEXT, folderId TEXT, added INTEGER);`,
+    `CREATE INDEX IF NOT EXISTS idx_bookmarks_url ON bookmarks(url);`,
+    `CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folderId);`,
+    `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY);`,
+    `CREATE TABLE IF NOT EXISTS visit_history(id TEXT PRIMARY KEY, url TEXT, title TEXT, domain TEXT, timestamp INTEGER);`,
+    `CREATE INDEX IF NOT EXISTS idx_history_domain ON visit_history(domain);`,
+    `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp);`
+  ];
+  for (const s of stmts) {
+    console.log("start exec - ", s);
+    await exec(s);
+    console.log("end exec - ", s);
+  }
+}
+
+function esc(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/'/g, "''");
+}
+
+// Migrate from chrome.storage.local into SQLite tables. Runs once.
+async function migrateLocalStorageToSQLite() {
+  try {
+    console.log('Starting localStorage -> SQLite migration');
+    await createSchema();
+     console.log('end createSchema()');
+
+    const keys = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders', 'passwordHash', 'monitoredDomains', 'visitHistory', 'privateNextId', 'privateFolderNextId', 'db_migrated_v1'], r));
+    console.log("local keys - ", keys);
+    if (keys.db_migrated_v1) {
+      console.log('Migration flag found; skipping migration');
+      return;
+    }
+
+    // Migrate settings/password and next ids
+    if (keys.passwordHash) {
+      await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('passwordHash', '${esc(keys.passwordHash)}');`);
+      console.log(keys.passwordHash);
+    }
+    if (keys.privateNextId !== undefined) {
+      await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('privateNextId', '${String(keys.privateNextId)}');`);
+      console.log(keys.privateNextId);
+    }
+    if (keys.privateFolderNextId !== undefined) {
+      await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('privateFolderNextId', '${String(keys.privateFolderNextId)}');`);
+      console.log(keys.privateFolderNextId);
+    }
+
+    // folders
+    const folders = Array.isArray(keys.privateFolders) ? keys.privateFolders : [];
+    console.log(folders);
+    for (const f of folders) {
+      const id = esc(f.id);
+      const name = esc(f.name || '');
+      await exec(`INSERT OR REPLACE INTO folders(id,name) VALUES('${id}','${name}');`);
+    }
+
+    // bookmarks
+    const bms = Array.isArray(keys.privateBookmarks) ? keys.privateBookmarks : [];
+    console.log(bms);
+    for (const b of bms) {
+      const id = esc(b.id);
+      const title = esc(b.title || '');
+      const url = esc(b.url || '');
+      const folderId = esc(b.folderId || '1');
+      const added = Number(b.added) || Date.now();
+      await exec(`INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`);
+    }
+
+    // monitored domains
+    const mons = Array.isArray(keys.monitoredDomains) ? keys.monitoredDomains : [];
+    console.log(mons);
+    for (const d of mons) {
+      await exec(`INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${esc(d)}');`);
+    }
+
+    // visit history
+    const hist = Array.isArray(keys.visitHistory) ? keys.visitHistory : [];
+    console.log(hist);
+    for (const h of hist) {
+      const id = esc(h.id || (String(Date.now()) + Math.random().toString(36).slice(2, 8)));
+      const url = esc(h.url || '');
+      const title = esc(h.title || '');
+      const domain = esc(h.domain || '');
+      const ts = Number(h.timestamp) || Date.now();
+      await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`);
+    }
+
+    // set migrated flag in chrome.storage.local so we won't re-run
+    await new Promise(r => chrome.storage.local.set({ db_migrated_v1: true }, r));
+    console.log('Migration completed successfully');
+  } catch (e) {
+    console.error('Migration failed', e);
+  }
 }
 

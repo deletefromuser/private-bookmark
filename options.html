@@ -54,6 +54,12 @@
   <button id="export-visit-history" class="btn btn-sm btn-outline-primary">Export Visit History (JSON)</button>
   <button id="clear-visit-history" class="btn btn-sm btn-outline-danger ms-2">Clear Visit History</button>
       </section>
+  <section>
+    <h3>Storage Migration</h3>
+    <p>Upgrade extension storage to the new SQLite-backed database. This runs a one-time migration from the existing extension storage into the embedded SQLite DB used by the extension.</p>
+    <button id="migrate-db" class="btn btn-warning">Migrate to SQLite</button>
+    <div id="migration-status" class="mt-2" aria-live="polite"></div>
+  </section>
   <script src="options.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ async function sha256(text) {
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 function getStorage() {
@@ -175,7 +175,7 @@ async function showDeleteFolderPrompt(folderId) {
   moveSelectHtml += '</select>';
   promptDiv.innerHTML = `<div>Delete folder "${folder.name}" — what to do with its bookmarks?</div>
     <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label><br>
-    <label><input type="radio" name="del-action" value="move"> Move bookmarks to: ${otherFolders.length? moveSelectHtml : '<em>(no other folder)</em>'}</label>
+    <label><input type="radio" name="del-action" value="move"> Move bookmarks to: ${otherFolders.length ? moveSelectHtml : '<em>(no other folder)</em>'}</label>
     <div><button id="del-confirm" class="btn btn-danger me-2">Confirm</button> <button id="del-cancel" class="btn btn-secondary me-2">Cancel</button></div>`;
   const rows = el.querySelectorAll('.folder-row');
   let replaced = false;
@@ -230,11 +230,11 @@ document.getElementById('folders-list')?.addEventListener('click', (e) => {
     (async () => {
       const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
       const folders = res.privateFolders || [];
-  const f = folders.find(x => x.id === id);
-  if (!f) { await _modal.showConfirm('Folder not found'); return; }
-  const newName = await _modal.showTextPrompt('New folder name', f.name);
-  if (newName == null) return;
-  f.name = newName;
+      const f = folders.find(x => x.id === id);
+      if (!f) { await _modal.showConfirm('Folder not found'); return; }
+      const newName = await _modal.showTextPrompt('New folder name', f.name);
+      if (newName == null) return;
+      f.name = newName;
       await new Promise(r => chrome.storage.local.set({ privateFolders: folders }, r));
       loadFoldersUI();
     })();
@@ -325,3 +325,38 @@ document.getElementById('export-html')?.addEventListener('click', async () => {
 // initialize folder UI on options page
 loadFoldersUI();
 loadChromeFoldersIntoSelect();
+
+// Migration button handler (will call background to migrate chrome.storage.local -> SQLite)
+// document.getElementById('migrate-db')?.addEventListener('click', async () => {
+//   const statusEl = document.getElementById('migration-status');
+//   if (statusEl) statusEl.textContent = 'Starting migration...';
+//   try {
+//     const resp = await new Promise(r => chrome.runtime.sendMessage({ action: 'MIGRATE_DB' }, r));
+//     console.log("sendMessage({ action: 'MIGRATE_DB' }, r) over");
+//     if (resp && resp.status === 'success') {
+//       if (statusEl) statusEl.textContent = 'Migration completed successfully.';
+//     } else {
+//       if (statusEl) statusEl.textContent = `Migration failed: ${resp?.message || 'unknown'}`;
+//     }
+//   } catch (e) {
+//     if (statusEl) statusEl.textContent = `Migration error: ${String(e)}`;
+//   }
+// });
+document.getElementById('migrate-db')?.addEventListener('click', () => {
+  const statusEl = document.getElementById('migration-status');
+  if (statusEl) statusEl.textContent = 'Starting migration...';
+  try {
+    chrome.runtime.sendMessage({ action: 'MIGRATE_DB' }).then(resp => {
+      console.log("sendMessage({ action: 'MIGRATE_DB' }, r) over");
+      if (resp && resp.status === 'success') {
+        if (statusEl) statusEl.textContent = 'Migration completed successfully.';
+      } else {
+        if (statusEl) statusEl.textContent = `Migration failed: ${resp?.message || 'unknown'}`;
+      }
+    }).catch(err => {
+      console.log("sendMessage({ action: 'MIGRATE_DB' }, r) over");
+    });
+  } catch (e) {
+    if (statusEl) statusEl.textContent = `Migration error: ${String(e)}`;
+  }
+});
