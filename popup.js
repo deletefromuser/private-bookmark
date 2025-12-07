@@ -1,30 +1,9 @@
-// 发送查询命令
-async function runQuery(sql) {
-  return chrome.runtime.sendMessage({
-    action: 'QUERY',
-    payload: { sql: sql }
-  }).then(response => {
-    if (response.status === 'success' && response.action === 'QUERY') {
-      console.log("查询结果:", response.data);
-    }
-  });
-}
-
 async function sha256(text) {
   if (!text) return '';
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Storage-backed bookmarks helpers
-function getStorage() {
-  return new Promise(res => chrome.storage.local.get(['privateBookmarks', 'privateNextId', 'passwordHash'], r => res(r)));
-}
-
-function saveStorage(obj) {
-  return new Promise(res => chrome.storage.local.set(obj, res));
 }
 
 async function addBookmark(title, url, folderId) {
@@ -160,15 +139,6 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
 
 document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
-
-  // 示例：插入数据
-runQuery("CREATE TABLE IF NOT EXISTS t(x PRIMARY KEY, y)").then(response => {
-    
-  });
-runQuery("INSERT OR REPLACE INTO t VALUES ('good', 'bad1'), ('hot', 'cold'), ('up', 'down')").then(item => {});
-
-// 示例：查询所有数据
-runQuery("SELECT * FROM t").then(item => {});
 });
 
 document.getElementById('open-history-viewer')?.addEventListener('click', async () => {

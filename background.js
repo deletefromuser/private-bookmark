@@ -22,9 +22,16 @@ async function handlePossibleVisit(url, title) {
   try {
     const parsed = new URL(url);
     const domain = parsed.hostname.replace(/^www\./, '');
-    const res = await chrome.storage.local.get({ monitoredDomains: [] });
-    const list = res.monitoredDomains || [];
-    if (!list.includes(domain)) return;
+    // check monitored_domains table in SQLite
+    try {
+      const rows = await exec(`SELECT domain FROM monitored_domains WHERE domain='${esc(domain)}' LIMIT 1;`);
+      // exec returns blocks of results; flatten
+      const found = (rows || []).flatMap(b => (b.rows || []).map(r => ({ columns: b.columns, row: r })));
+      if (!found || found.length === 0) return;
+    } catch (e) {
+      console.warn('monitored_domains query failed', e);
+      return;
+    }
     const now = Date.now();
     const last = recentSeen.get(url) || 0;
     if (now - last < DEBOUNCE_MS) return; // skip duplicates
@@ -50,14 +57,17 @@ async function handlePossibleVisit(url, title) {
         // ignore
       }
     }
-    const h = await new Promise(r => chrome.storage.local.get(['visitHistory'], r));
-    const current = h.visitHistory || [];
-    const entry = { id: String(Date.now()) + Math.random().toString(36).slice(2, 8), url, title: finalTitle, domain, timestamp: now };
-    current.push(entry);
-    await chrome.storage.local.set({ visitHistory: current });
+    const id = esc(String(Date.now()) + Math.random().toString(36).slice(2, 8));
+    const urlEsc = esc(url);
+    const titleEsc = esc(finalTitle);
+    const domainEsc = esc(domain);
+    try {
+      await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${urlEsc}','${titleEsc}','${domainEsc}', ${now});`);
+    } catch (e) {
+      console.warn('Failed to insert visit_history', e);
+    }
     // remove from native history
     try {
-      // delete the URL from native history after we've read its title
       chrome.history.deleteUrl({ url });
     } catch (e) { console.warn('Failed to delete native history url', e); }
   } catch (e) {
