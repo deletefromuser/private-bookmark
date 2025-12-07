@@ -11,8 +11,8 @@ function getPasswordHash() {
 }
 
 async function loadHistory() {
-  const res = await chrome.storage.local.get({ visitHistory: [] });
-  const list = res.visitHistory || [];
+  // read from SQLite via db helper
+  const list = await window.db.getVisitHistory(1000);
   const container = document.getElementById('history-list');
   container.innerHTML = '';
   if (list.length === 0) {
@@ -25,7 +25,7 @@ async function loadHistory() {
   const ul = document.createElement('ul');
   ul.className = 'list-group';
   // show newest first
-  list.slice().reverse().forEach(e => {
+  list.forEach(e => {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-start';
     const left = document.createElement('div');
@@ -49,15 +49,11 @@ async function loadHistory() {
     delBtn.addEventListener('click', async () => {
       const ok = await window._modal.showConfirm('Delete this history entry? This cannot be undone.');
       if (!ok) return;
-      // remove from storage by id
-      const res2 = await chrome.storage.local.get({ visitHistory: [] });
-      const arr = res2.visitHistory || [];
-      const idx = arr.findIndex(x => x.id === e.id);
-      if (idx >= 0) {
-        arr.splice(idx, 1);
-        await chrome.storage.local.set({ visitHistory: arr });
-        loadHistory();
-      }
+      // delete via SQL
+      try {
+        await window.db.run(`DELETE FROM visit_history WHERE id = '${String(e.id).replace(/'/g, "''")}';`);
+      } catch (err) { console.warn('Failed to delete history entry', err); }
+      loadHistory();
     });
     li.appendChild(delBtn);
     ul.appendChild(li);
