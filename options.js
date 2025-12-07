@@ -79,8 +79,7 @@ async function loadFoldersUI() {
 
 // ------------------ History Monitoring: monitoredDomains ------------------
 async function loadMonitoredDomainsUI() {
-  const data = await chrome.storage.local.get({ monitoredDomains: [] });
-  const list = data.monitoredDomains || [];
+  const list = (await db.getMonitoredDomains()) || [];
   const container = document.getElementById('monitored-domains-list');
   container.innerHTML = '';
   list.forEach(d => {
@@ -93,8 +92,8 @@ async function loadMonitoredDomainsUI() {
     del.addEventListener('click', async () => {
       const ok = await window._modal.showConfirm(`Remove monitored domain "${d}"?`);
       if (!ok) return;
-      const newList = list.filter(x => x !== d);
-      await chrome.storage.local.set({ monitoredDomains: newList });
+      const dEsc = d.replace(/'/g, "''");
+      await db.run(`DELETE FROM monitored_domains WHERE domain='${dEsc}';`);
       loadMonitoredDomainsUI();
     });
     const wrapper = document.createElement('span');
@@ -108,11 +107,9 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
   const input = document.getElementById('new-monitored-domain');
   const domain = input.value.trim();
   if (!domain) return;
-  const data = await chrome.storage.local.get({ monitoredDomains: [] });
-  const list = data.monitoredDomains || [];
+  const list = await db.getMonitoredDomains();
   if (!list.includes(domain)) {
-    list.push(domain);
-    await chrome.storage.local.set({ monitoredDomains: list });
+    await db.addMonitoredDomain(domain);
     input.value = '';
     loadMonitoredDomainsUI();
   }
@@ -121,15 +118,11 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
 document.getElementById('clear-monitored-domains')?.addEventListener('click', async () => {
   const ok = await window._modal.showConfirm('Clear all monitored domains? This cannot be undone.');
   if (!ok) return;
-  await chrome.storage.local.set({ monitoredDomains: [] });
+  await db.run('DELETE FROM monitored_domains;');
   loadMonitoredDomainsUI();
 });
 
-// ensure key exists on load
-chrome.storage.local.get(['monitoredDomains', 'visitHistory'], (res) => {
-  if (!Array.isArray(res.monitoredDomains)) chrome.storage.local.set({ monitoredDomains: [] });
-  if (!Array.isArray(res.visitHistory)) chrome.storage.local.set({ visitHistory: [] });
-});
+// no-op: monitored domains and visit history live in SQLite now
 
 // initialize UI on options load
 document.addEventListener('DOMContentLoaded', () => {
@@ -141,13 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
   const ok = await window._modal.showConfirm('Clear private visit history? This cannot be undone.');
   if (!ok) return;
-  await chrome.storage.local.set({ visitHistory: [] });
-  loadVisitHistoryUI();
+  await db.run('DELETE FROM visit_history;');
+  if (typeof loadVisitHistoryUI === 'function') loadVisitHistoryUI();
 });
 
 document.getElementById('export-visit-history')?.addEventListener('click', async () => {
-  const res = await chrome.storage.local.get({ visitHistory: [] });
-  const data = res.visitHistory || [];
+  const total = await db.countVisitHistory();
+  const data = total ? await db.getVisitHistoryPage(total, 0) : [];
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

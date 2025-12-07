@@ -11,8 +11,12 @@ function getPasswordHash() {
 }
 
 async function loadHistory() {
-  // read from SQLite via db helper
-  const list = await window.db.getVisitHistory(1000);
+  // pagination params
+  const pageSize = window.__hist_page_size = window.__hist_page_size || 20;
+  const pageIndex = window.__hist_page_index = window.__hist_page_index || 0;
+  const offset = pageIndex * pageSize;
+  // read from SQLite via db helper (paged)
+  const list = await window.db.getVisitHistoryPage(pageSize, offset);
   const container = document.getElementById('history-list');
   container.innerHTML = '';
   if (list.length === 0) {
@@ -20,6 +24,7 @@ async function loadHistory() {
     p.className = 'text-muted';
     p.textContent = '(no visits recorded yet)';
     container.appendChild(p);
+    updateHistPageInfo(pageIndex, pageSize, 0);
     return;
   }
   const ul = document.createElement('ul');
@@ -49,9 +54,8 @@ async function loadHistory() {
     delBtn.addEventListener('click', async () => {
       const ok = await window._modal.showConfirm('Delete this history entry? This cannot be undone.');
       if (!ok) return;
-      // delete via SQL
       try {
-        await window.db.run(`DELETE FROM visit_history WHERE id = '${String(e.id).replace(/'/g, "''")}';`);
+        await window.db.deleteHistory(e.id);
       } catch (err) { console.warn('Failed to delete history entry', err); }
       loadHistory();
     });
@@ -59,6 +63,19 @@ async function loadHistory() {
     ul.appendChild(li);
   });
   container.appendChild(ul);
+  const total = await window.db.countVisitHistory();
+  updateHistPageInfo(pageIndex, pageSize, total);
+}
+
+function updateHistPageInfo(pageIndex, pageSize, total) {
+  const info = document.getElementById('hist-page-info');
+  const start = pageIndex * pageSize + 1;
+  const end = Math.min(total, (pageIndex + 1) * pageSize);
+  if (info) info.textContent = total === 0 ? '0 of 0' : `${start}-${end} of ${total}`;
+  const prev = document.getElementById('hist-prev');
+  const next = document.getElementById('hist-next');
+  if (prev) prev.disabled = pageIndex <= 0;
+  if (next) next.disabled = end >= total;
 }
 
 function showUnlockError(msg) {
@@ -87,4 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const pwInput = document.getElementById('pw');
   if (pwInput) { pwInput.focus(); pwInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') document.getElementById('unlock').click(); }); }
   document.getElementById('refresh-history')?.addEventListener('click', () => { try { loadHistory(); } catch (e) { console.warn('Refresh history failed', e); } });
+  document.getElementById('hist-prev')?.addEventListener('click', () => { window.__hist_page_index = Math.max(0, (window.__hist_page_index || 0) - 1); loadHistory(); });
+  document.getElementById('hist-next')?.addEventListener('click', () => { window.__hist_page_index = (window.__hist_page_index || 0) + 1; loadHistory(); });
 });

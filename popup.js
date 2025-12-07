@@ -29,13 +29,7 @@ function saveStorage(obj) {
 
 async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
-  const { privateBookmarks = [], privateNextId = 1 } = await getStorage();
-  const id = String(privateNextId);
-  const bm = { id, title: title || url, url, folderId: folderId || '1', added: Date.now() };
-  privateBookmarks.push(bm);
-  await saveStorage({ privateBookmarks, privateNextId: privateNextId + 1 });
-  // return the created bookmark for caller convenience
-  return bm;
+  return await window.db.addBookmark({ title: title || url, url, folderId: folderId || '1', added: Date.now() });
 }
 
 function normalizeUrl(u) {
@@ -54,27 +48,24 @@ function normalizeUrl(u) {
   }
 }
 
-// load folders into the popup select
-function loadFoldersIntoSelect() {
-  chrome.storage.local.get(['privateFolders'], (res) => {
-    const sel = document.getElementById('folder-select');
-    if (!sel) return;
-    sel.innerHTML = '';
-    const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
-    folders.forEach(f => {
-      const opt = document.createElement('option');
-      opt.value = f.id;
-      opt.textContent = f.name;
-      sel.appendChild(opt);
-    });
+// load folders into the popup select (db-backed)
+async function loadFoldersIntoSelect() {
+  const sel = document.getElementById('folder-select');
+  if (!sel) return;
+  sel.innerHTML = '';
+  const folders = await window.db.getFolders();
+  (folders || [{ id: '1', name: 'Default' }]).forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = f.name;
+    sel.appendChild(opt);
   });
 }
 
 async function isUrlBookmarked(url) {
   if (!url) return false;
-  const { privateBookmarks = [] } = await getStorage();
-  const target = normalizeUrl(url);
-  return privateBookmarks.some(b => normalizeUrl(b.url) === target);
+  const found = await window.db.findBookmarkByUrl(url);
+  return !!found;
 }
 
 async function updateCurrentTabState() {
@@ -160,15 +151,11 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
   if (!tab || !tab.url) return showStatus('No active tab URL');
   const url = new URL(tab.url);
   const domain = url.hostname.replace(/^www\./, '');
-  const data = await chrome.storage.local.get({ monitoredDomains: [] });
-  const list = data.monitoredDomains || [];
+  const list = await window.db.getMonitoredDomains();
   if (!list.includes(domain)) {
-    list.push(domain);
-    await chrome.storage.local.set({ monitoredDomains: list });
+    await window.db.addMonitoredDomain(domain);
     showStatus('Domain added to monitored list');
-  } else {
-    showStatus('Domain is already monitored');
-  }
+  } else showStatus('Domain is already monitored');
 });
 
 document.getElementById('open-view').addEventListener('click', () => {
