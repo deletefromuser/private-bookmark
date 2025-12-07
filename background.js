@@ -19,60 +19,28 @@ const DEBOUNCE_MS = 5000;
 
 async function handlePossibleVisit(url, title) {
   if (!url) return;
+  let parsed;
+  try { parsed = new URL(url); } catch (e) { console.warn('handlePossibleVisit parse failed', e); return; }
+  const domain = parsed.hostname.replace(/^www\./, '');
+  if (!await isDomainMonitored(domain)) return;
+  const now = Date.now();
+  const last = recentSeen.get(url) || 0;
+  if (now - last < DEBOUNCE_MS) return; // skip duplicates
+  recentSeen.set(url, now);
+  // prefer explicit title, then history, then tab title
+  let finalTitle = title || '';
+  if (!finalTitle) finalTitle = await fetchTitleFromHistory(url);
+  if (!finalTitle) finalTitle = await getTabTitleForUrl(url);
+  const id = esc(String(Date.now()) + Math.random().toString(36).slice(2, 8));
+  const urlEsc = esc(url);
+  const titleEsc = esc(finalTitle);
+  const domainEsc = esc(domain);
   try {
-    const parsed = new URL(url);
-    const domain = parsed.hostname.replace(/^www\./, '');
-    // check monitored_domains table in SQLite
-    try {
-      const rows = await exec(`SELECT domain FROM monitored_domains WHERE domain='${esc(domain)}' LIMIT 1;`);
-      // exec returns blocks of results; flatten
-      const found = (rows || []).flatMap(b => (b.rows || []).map(r => ({ columns: b.columns, row: r })));
-      if (!found || found.length === 0) return;
-    } catch (e) {
-      console.warn('monitored_domains query failed', e);
-      return;
-    }
-    const now = Date.now();
-    const last = recentSeen.get(url) || 0;
-    if (now - last < DEBOUNCE_MS) return; // skip duplicates
-    recentSeen.set(url, now);
-    // append to visitHistory; prefer title from native history before it's deleted
-    let finalTitle = title || '';
-    try {
-      // try to find a matching history item for this exact URL
-      const historyItems = await new Promise(r => chrome.history.search({ text: url, maxResults: 10 }, r));
-      // console.log(JSON.stringify(historyItems.map(item => item.title)));
-      // chrome.history.search({"maxResults":10}).then(list => {console.log(JSON.stringify());});
-      if (historyItems && historyItems.length > 0 && historyItems[0].title) {
-        finalTitle = historyItems[0].title;
-      }
-    } catch (e) {
-      // ignore and fall back to tabs
-    }
-    if (!finalTitle) {
-      try {
-        const tabs = await new Promise(r => chrome.tabs.query({ url }, r));
-        if (tabs && tabs.length > 0 && tabs[0].title) finalTitle = tabs[0].title;
-      } catch (e) {
-        // ignore
-      }
-    }
-    const id = esc(String(Date.now()) + Math.random().toString(36).slice(2, 8));
-    const urlEsc = esc(url);
-    const titleEsc = esc(finalTitle);
-    const domainEsc = esc(domain);
-    try {
-      await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${urlEsc}','${titleEsc}','${domainEsc}', ${now});`);
-    } catch (e) {
-      console.warn('Failed to insert visit_history', e);
-    }
-    // remove from native history
-    try {
-      chrome.history.deleteUrl({ url });
-    } catch (e) { console.warn('Failed to delete native history url', e); }
+    await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${urlEsc}','${titleEsc}','${domainEsc}', ${now});`);
   } catch (e) {
-    console.warn('handlePossibleVisit parse failed', e);
+    console.warn('Failed to insert visit_history', e);
   }
+  try { chrome.history.deleteUrl({ url }); } catch (e) { console.warn('Failed to delete native history url', e); }
 }
 
 // Attempt automatic migration at startup (safe: routine checks for a migration flag)
@@ -87,7 +55,6 @@ async function handlePossibleVisit(url, title) {
 // listen for navigations completed (fires when the document finishes loading)
 chrome.webNavigation?.onCompleted?.addListener((details) => {
   if (details && details.url && details.frameId === 0) {
-    // console.log("triggered web navigation");
     // pass empty title; handlePossibleVisit will query the tab title if needed
     handlePossibleVisit(details.url, '');
   }
@@ -96,7 +63,6 @@ chrome.webNavigation?.onCompleted?.addListener((details) => {
 // fallback: tabs.onUpdated detect URL changes
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'complete' && tab && tab.url) {
-    // console.log("triggered tab update");
     setTimeout(() => {
       handlePossibleVisit(tab.url, tab.title);
     }, 2000);
@@ -135,12 +101,7 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
   return true;
 });
 
-// async function handleMsg(sendResponse, data) {
-//   await exec(data.payload.sql).then(result => {
-//     console.log(result);
-//     sendResponse({ status: 'success', action: 'QUERY', data: result });
-//   });
-// };
+// (removed unused helper)
 
 import SQLiteESMFactory from './wa-sqlite/dist/wa-sqlite-async.mjs';
 import * as SQLite from './wa-sqlite/src/sqlite-api.js';
@@ -191,7 +152,44 @@ async function createSchema() {
 
 function esc(v) {
   if (v === null || v === undefined) return '';
-  return String(v).replace(/'/g, "''");
+  return String(v).replaceAll("'", "''");
+}
+
+// helper: check if domain is in monitored_domains table
+async function isDomainMonitored(domain) {
+  try {
+    const rows = await exec(`SELECT domain FROM monitored_domains WHERE domain='${esc(domain)}' LIMIT 1;`);
+    // rows is an array of blocks; check if any rows exist
+    for (const b of rows || []) {
+      if (Array.isArray(b.rows) && b.rows.length > 0) return true;
+    }
+    return false;
+  } catch (e) {
+    console.warn('isDomainMonitored query failed', e);
+    return false;
+  }
+}
+
+// helper: try to get title from history for exact URL
+async function fetchTitleFromHistory(url) {
+  try {
+    const items = await new Promise(r => chrome.history.search({ text: url, maxResults: 10 }, r));
+    if (items && items.length > 0 && items[0].title) return items[0].title;
+  } catch (e) {
+    console.debug('fetchTitleFromHistory failure', e);
+  }
+  return '';
+}
+
+// helper: try to get title from open tabs for exact URL
+async function getTabTitleForUrl(url) {
+  try {
+    const tabs = await new Promise(r => chrome.tabs.query({ url }, r));
+    if (tabs && tabs.length > 0 && tabs[0].title) return tabs[0].title;
+  } catch (e) {
+    console.debug('getTabTitleForUrl failure', e);
+  }
+  return '';
 }
 
 // Migrate from chrome.storage.local into SQLite tables. Runs once.
@@ -199,10 +197,10 @@ async function migrateLocalStorageToSQLite() {
   try {
     console.log('Starting localStorage -> SQLite migration');
     await createSchema();
-     console.log('end createSchema()');
+    console.log('end createSchema()');
 
     const keys = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders', 'passwordHash', 'monitoredDomains', 'visitHistory', 'privateNextId', 'privateFolderNextId', 'db_migrated_v1'], r));
-    console.log("local keys - ", keys);
+    console.log('local keys - ', keys);
     if (keys.db_migrated_v1) {
       console.log('Migration flag found; skipping migration');
       return;

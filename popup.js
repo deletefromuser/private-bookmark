@@ -8,7 +8,7 @@ async function sha256(text) {
 
 async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
-  return await window.db.addBookmark({ title: title || url, url, folderId: folderId || '1', added: Date.now() });
+  return await globalThis.db.addBookmark({ title: title || url, url, folderId: folderId || '1', added: Date.now() });
 }
 
 function normalizeUrl(u) {
@@ -32,18 +32,19 @@ async function loadFoldersIntoSelect() {
   const sel = document.getElementById('folder-select');
   if (!sel) return;
   sel.innerHTML = '';
-  const folders = await window.db.getFolders();
-  (folders || [{ id: '1', name: 'Default' }]).forEach(f => {
+  const folders = await globalThis.db.getFolders();
+  const useFolders = folders || [{ id: '1', name: 'Default' }];
+  for (const f of useFolders) {
     const opt = document.createElement('option');
     opt.value = f.id;
     opt.textContent = f.name;
     sel.appendChild(opt);
-  });
+  }
 }
 
 async function isUrlBookmarked(url) {
   if (!url) return false;
-  const found = await window.db.findBookmarkByUrl(url);
+  const found = await globalThis.db.findBookmarkByUrl(url);
   return !!found;
 }
 
@@ -130,11 +131,13 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
   if (!tab || !tab.url) return showStatus('No active tab URL');
   const url = new URL(tab.url);
   const domain = url.hostname.replace(/^www\./, '');
-  const list = await window.db.getMonitoredDomains();
-  if (!list.includes(domain)) {
-    await window.db.addMonitoredDomain(domain);
+  const list = await globalThis.db.getMonitoredDomains();
+  if (list.includes(domain)) {
+    showStatus('Domain is already monitored');
+  } else {
+    await globalThis.db.addMonitoredDomain(domain);
     showStatus('Domain added to monitored list');
-  } else showStatus('Domain is already monitored');
+  }
 });
 
 document.getElementById('open-view').addEventListener('click', () => {
@@ -156,7 +159,7 @@ function showStatus(msg, timeout = 2500) {
 }
 
 // initialize current-tab state when popup opens
-try { updateCurrentTabState(); } catch (e) { /* non-fatal */ }
+updateCurrentTabState().catch(() => {/* non-fatal */});
 // load folders for folder select
-loadFoldersIntoSelect();
+loadFoldersIntoSelect().catch(() => {/* non-fatal */});
 // (showStatus is defined above)

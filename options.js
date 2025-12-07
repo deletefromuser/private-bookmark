@@ -54,11 +54,19 @@ document.getElementById('clear-password').addEventListener('click', async () => 
 
 // Initialize status
 // Initialize status
-getStorage().then(({ passwordHash }) => {
-  const status = document.getElementById('status');
-  if (passwordHash) status.textContent = 'Password is set.';
-  else status.textContent = 'No password set.';
-});
+(async function initOptionsStatus() {
+  try {
+    const { passwordHash } = await getStorage();
+    const status = document.getElementById('status');
+    if (passwordHash) {
+      status.textContent = 'Password is set.';
+    } else {
+      status.textContent = 'No password set.';
+    }
+  } catch (e) {
+    console.debug('initOptionsStatus failed', e);
+  }
+})();
 
 // ----- Folder management UI -----
 async function loadFoldersUI() {
@@ -67,14 +75,14 @@ async function loadFoldersUI() {
   const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
   const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
   el.innerHTML = '';
-  folders.forEach(f => {
+  for (const f of folders) {
     const row = document.createElement('div');
     row.className = 'folder-row';
     row.innerHTML = `<span class="folder-name">${f.name}</span>
       <button data-id="${f.id}" class="rename-folder btn btn-primary me-2">Rename</button>
       <button data-id="${f.id}" class="delete-folder btn btn-danger me-2">Delete</button>`;
     el.appendChild(row);
-  });
+  }
 }
 
 // ------------------ History Monitoring: monitoredDomains ------------------
@@ -82,7 +90,7 @@ async function loadMonitoredDomainsUI() {
   const list = (await db.getMonitoredDomains()) || [];
   const container = document.getElementById('monitored-domains-list');
   container.innerHTML = '';
-  list.forEach(d => {
+  for (const d of list) {
     const badge = document.createElement('span');
     badge.className = 'badge bg-secondary me-1 mb-1 d-inline-flex align-items-center';
     badge.textContent = d;
@@ -90,9 +98,9 @@ async function loadMonitoredDomainsUI() {
     del.className = 'btn-close btn-close-black ms-2';
     del.style.opacity = '0.8';
     del.addEventListener('click', async () => {
-      const ok = await window._modal.showConfirm(`Remove monitored domain "${d}"?`);
+      const ok = await globalThis._modal.showConfirm(`Remove monitored domain "${d}"?`);
       if (!ok) return;
-      const dEsc = d.replace(/'/g, "''");
+      const dEsc = d.replaceAll("'", "''");
       await db.run(`DELETE FROM monitored_domains WHERE domain='${dEsc}';`);
       loadMonitoredDomainsUI();
     });
@@ -100,7 +108,7 @@ async function loadMonitoredDomainsUI() {
     wrapper.appendChild(badge);
     wrapper.appendChild(del);
     container.appendChild(wrapper);
-  });
+  }
 }
 
 document.getElementById('add-monitored-domain')?.addEventListener('click', async () => {
@@ -116,7 +124,7 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
 });
 
 document.getElementById('clear-monitored-domains')?.addEventListener('click', async () => {
-  const ok = await window._modal.showConfirm('Clear all monitored domains? This cannot be undone.');
+  const ok = await globalThis._modal.showConfirm('Clear all monitored domains? This cannot be undone.');
   if (!ok) return;
   await db.run('DELETE FROM monitored_domains;');
   loadMonitoredDomainsUI();
@@ -132,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Open visit history viewer moved to popup
 
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
-  const ok = await window._modal.showConfirm('Clear private visit history? This cannot be undone.');
+  const ok = await globalThis._modal.showConfirm('Clear private visit history? This cannot be undone.');
   if (!ok) return;
   await db.run('DELETE FROM visit_history;');
   if (typeof loadVisitHistoryUI === 'function') loadVisitHistoryUI();
@@ -164,7 +172,7 @@ async function showDeleteFolderPrompt(folderId) {
   promptDiv.className = 'folder-delete-prompt';
   const otherFolders = folders.filter(f => f.id !== folderId);
   let moveSelectHtml = '<select id="delete-move-target" class="form-select mb-2">';
-  otherFolders.forEach(f => { moveSelectHtml += `<option value="${f.id}">${f.name}</option>`; });
+  for (const f of otherFolders) moveSelectHtml += `<option value="${f.id}">${f.name}</option>`;
   moveSelectHtml += '</select>';
   promptDiv.innerHTML = `<div>Delete folder "${folder.name}" — what to do with its bookmarks?</div>
     <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label><br>
@@ -172,13 +180,13 @@ async function showDeleteFolderPrompt(folderId) {
     <div><button id="del-confirm" class="btn btn-danger me-2">Confirm</button> <button id="del-cancel" class="btn btn-secondary me-2">Cancel</button></div>`;
   const rows = el.querySelectorAll('.folder-row');
   let replaced = false;
-  rows.forEach(r => {
-    const id = r.querySelector('button')?.getAttribute('data-id');
+  for (const r of rows) {
+    const id = r.querySelector('button')?.dataset?.id;
     if (id === folderId) {
       r.parentNode.replaceChild(promptDiv, r);
       replaced = true;
     }
-  });
+  }
   if (!replaced) el.appendChild(promptDiv);
   document.getElementById('del-cancel').addEventListener('click', () => { promptDiv.remove(); loadFoldersUI(); });
   document.getElementById('del-confirm').addEventListener('click', async () => {
@@ -191,7 +199,7 @@ async function showDeleteFolderPrompt(folderId) {
       const sel = document.getElementById('delete-move-target');
       if (!sel || !sel.value) return alert('No target folder selected');
       const targetId = sel.value;
-      const newBms = bookmarks.map(b => b.folderId === folderId ? Object.assign({}, b, { folderId: targetId }) : b);
+  const newBms = bookmarks.map(b => b.folderId === folderId ? { ...b, folderId: targetId } : b);
       const newFolders = folders.filter(f => f.id !== folderId);
       await new Promise(r => chrome.storage.local.set({ privateBookmarks: newBms, privateFolders: newFolders }, r));
     }
@@ -215,11 +223,11 @@ document.getElementById('create-folder')?.addEventListener('click', async () => 
 });
 
 // delegate rename/delete actions
-document.getElementById('folders-list')?.addEventListener('click', (e) => {
+  document.getElementById('folders-list')?.addEventListener('click', (e) => {
   const btn = e.target;
   if (!btn) return;
   if (btn.classList.contains('rename-folder')) {
-    const id = btn.getAttribute('data-id');
+    const id = btn.dataset?.id;
     (async () => {
       const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
       const folders = res.privateFolders || [];
@@ -232,18 +240,18 @@ document.getElementById('folders-list')?.addEventListener('click', (e) => {
       loadFoldersUI();
     })();
   } else if (btn.classList.contains('delete-folder')) {
-    const id = btn.getAttribute('data-id');
+    const id = btn.dataset?.id;
     showDeleteFolderPrompt(id);
   }
 });
 
 // ----- Import / Export -----
 function buildChromeFolderList(nodes, list) {
-  nodes.forEach(n => {
-    if (n.url) return; // skip bookmarks, only folders
+  for (const n of nodes) {
+    if (n.url) continue; // skip bookmarks, only folders
     list.push({ id: n.id, title: n.title });
     if (n.children) buildChromeFolderList(n.children, list);
-  });
+  }
 }
 
 function loadChromeFoldersIntoSelect() {
@@ -253,16 +261,16 @@ function loadChromeFoldersIntoSelect() {
     const list = [];
     buildChromeFolderList(nodes, list);
     sel.innerHTML = '';
-    list.forEach(f => {
+    for (const f of list) {
       const opt = document.createElement('option'); opt.value = f.id; opt.textContent = f.title || f.id; sel.appendChild(opt);
-    });
+    }
   });
 }
 
 function collectChromeBookmarks(node, out) {
   if (!node) return;
   if (node.url) out.push({ title: node.title, url: node.url, dateAdded: node.dateAdded });
-  if (node.children) node.children.forEach(c => collectChromeBookmarks(c, out));
+  if (node.children) for (const c of node.children) collectChromeBookmarks(c, out);
 }
 
 document.getElementById('import-chrome')?.addEventListener('click', async () => {
@@ -285,10 +293,10 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
     folders.push({ id: newFolderId, name: chromeFolderName });
     const privateBookmarks = res.privateBookmarks || [];
     let nextBmId = res.privateNextId || (privateBookmarks.length + 1);
-    collected.forEach(b => {
+    for (const b of collected) {
       const added = b.dateAdded ? Number(b.dateAdded) : Date.now();
       privateBookmarks.push({ id: String(nextBmId++), title: b.title, url: b.url, folderId: newFolderId, added });
-    });
+    }
     await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextFolderId + 1, privateBookmarks, privateNextId: nextBmId }, r));
     if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
     loadFoldersUI();
@@ -301,13 +309,12 @@ document.getElementById('export-html')?.addEventListener('click', async () => {
   const bms = res.privateBookmarks || [];
   const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
   let html = '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
-  folders.forEach(folder => {
+  for (const folder of folders) {
     html += `<DT><H3>${folder.name}</H3>\n<DL><p>\n`;
-    bms.filter(b => (b.folderId || '1') === folder.id).forEach(b => {
-      html += `<DT><A HREF="${b.url}">${b.title || b.url}</A>\n`;
-    });
+    const items = bms.filter(b => (b.folderId || '1') === folder.id);
+    for (const b of items) html += `<DT><A HREF="${b.url}">${b.title || b.url}</A>\n`;
     html += '</DL><p>\n';
-  });
+  }
   html += '</DL><p>\n';
   const blob = new Blob([html], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
