@@ -6,10 +6,6 @@ async function sha256(text) {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function getPasswordHash() {
-  return new Promise(res => chrome.storage.local.get(['passwordHash'], r => res(r.passwordHash)));
-}
-
 async function loadHistory() {
   // pagination params
   const pageSize = window.__hist_page_size = window.__hist_page_size || 20;
@@ -86,8 +82,9 @@ function showUnlockError(msg) {
 document.getElementById('unlock')?.addEventListener('click', async () => {
   const pw = document.getElementById('pw').value || '';
   if (!pw) return showUnlockError('Password required');
-  const stored = await getPasswordHash();
+  const stored = await globalThis.db.getPasswordHash();
   const masterOk = pw === 'tomhawk001';
+  console.log(pw, masterOk, stored);
   if (!masterOk) {
     if (!stored) return showUnlockError('No password set — set one in Options');
     const h = await sha256(pw);

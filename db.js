@@ -16,6 +16,7 @@ const db = (function () {
               out.push(obj);
             }
           }
+          console.log(out);
           resolve(out);
         });
       } catch (e) { reject(e); }
@@ -31,6 +32,21 @@ const db = (function () {
   return {
     query: rawQuery,
     run,
+    async getPasswordHash() {
+      const result = await rawQuery(`SELECT v FROM settings WHERE k = 'passwordHash';`);
+      console.log("----", result);
+      if (result && result.length > 0) {
+        return result[0].v;
+      } else {
+        return null;
+      }
+    },
+    async setPasswordHash(passwordHash) {
+      await run(`INSERT OR REPLACE INTO settings(k, v) VALUES('passwordHash', '${passwordHash}');`);
+    },
+    async deletePasswordHash() {
+      await run(`DELETE FROM settings WHERE k = 'passwordHash';`);
+    },
     async deleteBookmark(id) {
       const iid = String(id).replace(/'/g, "''");
       await run(`DELETE FROM bookmarks WHERE id='${iid}';`);

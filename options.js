@@ -6,14 +6,6 @@ async function sha256(text) {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function getStorage() {
-  return new Promise(res => chrome.storage.local.get(['passwordHash'], r => res(r)));
-}
-
-function saveStorage(obj) {
-  return new Promise(res => chrome.storage.local.set(obj, res));
-}
-
 document.getElementById('set-password').addEventListener('click', async () => {
   const newPw = document.getElementById('new-password').value;
   if (!newPw) {
@@ -23,7 +15,7 @@ document.getElementById('set-password').addEventListener('click', async () => {
   // require current password or master password
   const current = await _modal.showTextPrompt('Enter current password to change it (or enter master password)', '');
   if (current == null) return; // cancelled
-  const { passwordHash } = await getStorage();
+  const passwordHash = await globalThis.db.getPasswordHash();
   const currentHash = await sha256(current);
   const masterOk = current === 'tomhawk001';
   if (!(masterOk || (passwordHash && currentHash === passwordHash))) {
@@ -31,7 +23,7 @@ document.getElementById('set-password').addEventListener('click', async () => {
     return;
   }
   const hash = await sha256(newPw);
-  await saveStorage({ passwordHash: hash });
+  await globalThis.db.setPasswordHash(hash);
   document.getElementById('new-password').value = '';
   document.getElementById('status').textContent = 'Password changed.';
 });
@@ -41,14 +33,14 @@ document.getElementById('clear-password').addEventListener('click', async () => 
   if (!confirmed) return;
   const current = await _modal.showTextPrompt('Enter current password to clear it (or enter master password)', '');
   if (current == null) return; // cancelled
-  const { passwordHash } = await getStorage();
+  const passwordHash = await globalThis.db.getPasswordHash();
   const currentHash = await sha256(current);
   const masterOk = current === 'tomhawk001';
   if (!(masterOk || (passwordHash && currentHash === passwordHash))) {
     document.getElementById('status').textContent = 'Current password incorrect. Clear aborted.';
     return;
   }
-  await saveStorage({ passwordHash: null });
+  await globalThis.db.deletePasswordHash();
   document.getElementById('status').textContent = 'Password cleared.';
 });
 
@@ -56,7 +48,7 @@ document.getElementById('clear-password').addEventListener('click', async () => 
 // Initialize status
 (async function initOptionsStatus() {
   try {
-    const { passwordHash } = await getStorage();
+    const passwordHash = await globalThis.db.getPasswordHash();
     const status = document.getElementById('status');
     if (passwordHash) {
       status.textContent = 'Password is set.';
@@ -326,22 +318,6 @@ document.getElementById('export-html')?.addEventListener('click', async () => {
 loadFoldersUI();
 loadChromeFoldersIntoSelect();
 
-// Migration button handler (will call background to migrate chrome.storage.local -> SQLite)
-// document.getElementById('migrate-db')?.addEventListener('click', async () => {
-//   const statusEl = document.getElementById('migration-status');
-//   if (statusEl) statusEl.textContent = 'Starting migration...';
-//   try {
-//     const resp = await new Promise(r => chrome.runtime.sendMessage({ action: 'MIGRATE_DB' }, r));
-//     console.log("sendMessage({ action: 'MIGRATE_DB' }, r) over");
-//     if (resp && resp.status === 'success') {
-//       if (statusEl) statusEl.textContent = 'Migration completed successfully.';
-//     } else {
-//       if (statusEl) statusEl.textContent = `Migration failed: ${resp?.message || 'unknown'}`;
-//     }
-//   } catch (e) {
-//     if (statusEl) statusEl.textContent = `Migration error: ${String(e)}`;
-//   }
-// });
 document.getElementById('migrate-db')?.addEventListener('click', () => {
   const statusEl = document.getElementById('migration-status');
   if (statusEl) statusEl.textContent = 'Starting migration...';

@@ -6,14 +6,6 @@ async function sha256(text) {
   return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-function getFolderId() {
-  return new Promise((res) => chrome.storage.local.get(['privateFolderId'], r => res(r.privateFolderId)));
-}
-
-function getPasswordHash() {
-  return new Promise(res => chrome.storage.local.get(['passwordHash'], r => res(r.passwordHash)));
-}
-
 // load chrome bookmark folders into select
 // ...existing code...
 
@@ -76,7 +68,7 @@ document.getElementById('refresh-bookmarks')?.addEventListener('click', () => {
 
 document.getElementById('unlock').addEventListener('click', async () => {
   const pw = document.getElementById('pw').value;
-  const stored = await getPasswordHash();
+  const stored = await globalThis.db.getPasswordHash();
   if (!stored) {
     // no password set -> allow
     document.getElementById('auth').style.display = 'none';
@@ -148,7 +140,7 @@ document.getElementById('bm-next')?.addEventListener('click', () => {
 
 // initial check
 (async function(){
-  const stored = await getPasswordHash();
+  const stored = await globalThis.db.getPasswordHash();
   const authMsg = document.getElementById('auth-msg');
   if (!stored) {
     authMsg.textContent = 'No password set — click Unlock to view.';
