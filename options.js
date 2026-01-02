@@ -64,8 +64,8 @@ document.getElementById('clear-password').addEventListener('click', async () => 
 async function loadFoldersUI() {
   const el = document.getElementById('folders-list');
   if (!el) return;
-  const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
-  const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
+  let folders = await db.getFolders();
+  if (!folders || folders.length === 0) folders = [{ id: '1', name: 'Default' }];
   el.innerHTML = '';
   for (const f of folders) {
     const row = document.createElement('div');
@@ -129,6 +129,93 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMonitoredDomainsUI();
 });
 
+// Backup / Restore handlers
+document.getElementById('export-db')?.addEventListener('click', async () => {
+  const status = document.getElementById('backup-status');
+  try {
+    if (status) status.textContent = 'Preparing export...';
+    const settings = await db.query("SELECT k,v FROM settings;");
+    const folders = await db.query("SELECT id,name FROM folders;");
+    const bookmarks = await db.query("SELECT id,title,url,folderId,added FROM bookmarks;");
+    const monitored = await db.query("SELECT domain FROM monitored_domains;");
+    const visit_history = await db.query("SELECT id,url,title,domain,timestamp FROM visit_history;");
+    const out = { settings, folders, bookmarks, monitored, visit_history, exported_at: Date.now() };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `private-bookmark-db-${Date.now()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    if (status) status.textContent = 'Database exported';
+  } catch (e) {
+    console.error('Export failed', e);
+    if (status) status.textContent = `Export failed: ${String(e)}`;
+  }
+});
+
+document.getElementById('import-db')?.addEventListener('click', async () => {
+  const status = document.getElementById('backup-status');
+  try {
+    const input = document.getElementById('import-db-file');
+    if (!input || !input.files || input.files.length === 0) { if (status) status.textContent = 'Select a JSON file first'; return; }
+    const file = input.files[0];
+    const text = await file.text();
+    let obj;
+    try { obj = JSON.parse(text); } catch (e) { if (status) status.textContent = 'Invalid JSON file'; return; }
+    // Basic validation
+    if (!obj || !obj.settings || !obj.folders || !obj.bookmarks) { if (status) status.textContent = 'JSON missing required tables'; return; }
+    if (status) status.textContent = 'Restoring database...';
+    // Run restore in a transaction using SQL statements via db.run
+    // await db.run('BEGIN TRANSACTION;');
+    try {
+      await db.run('DELETE FROM settings;');
+      await db.run('DELETE FROM folders;');
+      await db.run('DELETE FROM bookmarks;');
+      await db.run('DELETE FROM monitored_domains;');
+      await db.run('DELETE FROM visit_history;');
+      for (const s of (obj.settings || [])) {
+        const k = String(s.k).replaceAll("'", "''");
+        const v = s.v == null ? '' : String(s.v).replaceAll("'", "''");
+        await db.run(`INSERT INTO settings(k,v) VALUES('${k}','${v}');`);
+      }
+      for (const f of (obj.folders || [])) {
+        const id = String(f.id).replaceAll("'", "''");
+        const name = String(f.name || '').replaceAll("'", "''");
+        await db.run(`INSERT INTO folders(id,name) VALUES('${id}','${name}');`);
+      }
+      for (const b of (obj.bookmarks || [])) {
+        const id = String(b.id).replaceAll("'", "''");
+        const title = String(b.title || '').replaceAll("'", "''");
+        const url = String(b.url || '').replaceAll("'", "''");
+        const folderId = String(b.folderId || '1').replaceAll("'", "''");
+        const added = Number(b.added) || Date.now();
+        await db.run(`INSERT INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`);
+      }
+      for (const m of (obj.monitored || [])) {
+        const domain = String(m.domain || '').replaceAll("'", "''");
+        await db.run(`INSERT INTO monitored_domains(domain) VALUES('${domain}');`);
+      }
+      for (const h of (obj.visit_history || [])) {
+        const id = String(h.id).replaceAll("'", "''");
+        const url = String(h.url || '').replaceAll("'", "''");
+        const title = String(h.title || '').replaceAll("'", "''");
+        const domain = String(h.domain || '').replaceAll("'", "''");
+        const ts = Number(h.timestamp) || Date.now();
+        await db.run(`INSERT INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`);
+      }
+      // await db.run('COMMIT;');
+      if (status) status.textContent = 'Database restored (refreshing UI)...';
+      // refresh UI
+      loadFoldersUI(); loadMonitoredDomainsUI();
+    } catch (e) {
+      console.error('Restore failed', e);
+      // await db.run('ROLLBACK;');
+      throw e;
+    }
+  } catch (e) {
+    console.error('Restore failed', e);
+    const status = document.getElementById('backup-status');
+    if (status) status.textContent = `Restore failed: ${String(e)}`;
+  }
+});
+
 // Open visit history viewer moved to popup
 
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
@@ -155,9 +242,7 @@ document.getElementById('export-visit-history')?.addEventListener('click', async
 // inline delete prompt similar to view.js
 async function showDeleteFolderPrompt(folderId) {
   const el = document.getElementById('folders-list');
-  const res = await new Promise(r => chrome.storage.local.get(['privateFolders', 'privateBookmarks'], r));
-  const folders = res.privateFolders || [];
-  const bookmarks = res.privateBookmarks || [];
+  const folders = await db.getFolders();
   const folder = folders.find(f => f.id === folderId);
   if (!folder) return alert('Folder not found');
   const promptDiv = document.createElement('div');
@@ -184,16 +269,17 @@ async function showDeleteFolderPrompt(folderId) {
   document.getElementById('del-confirm').addEventListener('click', async () => {
     const action = promptDiv.querySelector('input[name="del-action"]:checked').value;
     if (action === 'delete') {
-      const newBms = bookmarks.filter(b => b.folderId !== folderId);
-      const newFolders = folders.filter(f => f.id !== folderId);
-      await new Promise(r => chrome.storage.local.set({ privateBookmarks: newBms, privateFolders: newFolders }, r));
+  const fid = String(folderId).replaceAll("'", "''");
+  await db.run(`DELETE FROM bookmarks WHERE folderId='${fid}';`);
+  await db.run(`DELETE FROM folders WHERE id='${fid}';`);
     } else {
       const sel = document.getElementById('delete-move-target');
       if (!sel || !sel.value) return alert('No target folder selected');
       const targetId = sel.value;
-  const newBms = bookmarks.map(b => b.folderId === folderId ? { ...b, folderId: targetId } : b);
-      const newFolders = folders.filter(f => f.id !== folderId);
-      await new Promise(r => chrome.storage.local.set({ privateBookmarks: newBms, privateFolders: newFolders }, r));
+  const fid = String(folderId).replaceAll("'", "''");
+  const tid = String(targetId).replaceAll("'", "''");
+  await db.run(`UPDATE bookmarks SET folderId='${tid}' WHERE folderId='${fid}';`);
+  await db.run(`DELETE FROM folders WHERE id='${fid}';`);
     }
     promptDiv.remove();
     loadFoldersUI();
@@ -204,12 +290,7 @@ async function showDeleteFolderPrompt(folderId) {
 document.getElementById('create-folder')?.addEventListener('click', async () => {
   const name = document.getElementById('new-folder-name').value;
   if (!name) return alert('Folder name required');
-  const res = await new Promise(r => chrome.storage.local.get(['privateFolders', 'privateFolderNextId'], r));
-  const folders = res.privateFolders || [];
-  const nextId = res.privateFolderNextId || (folders.length + 1);
-  const id = String(nextId);
-  folders.push({ id, name });
-  await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextId + 1 }, r));
+  await db.addFolder({ name });
   document.getElementById('new-folder-name').value = '';
   loadFoldersUI();
 });
@@ -221,14 +302,12 @@ document.getElementById('create-folder')?.addEventListener('click', async () => 
   if (btn.classList.contains('rename-folder')) {
     const id = btn.dataset?.id;
     (async () => {
-      const res = await new Promise(r => chrome.storage.local.get(['privateFolders'], r));
-      const folders = res.privateFolders || [];
+      const folders = await db.getFolders();
       const f = folders.find(x => x.id === id);
       if (!f) { await _modal.showConfirm('Folder not found'); return; }
       const newName = await _modal.showTextPrompt('New folder name', f.name);
       if (newName == null) return;
-      f.name = newName;
-      await new Promise(r => chrome.storage.local.set({ privateFolders: folders }, r));
+      await db.addFolder({ id: f.id, name: newName });
       loadFoldersUI();
     })();
   } else if (btn.classList.contains('delete-folder')) {
@@ -272,34 +351,36 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
   const statusEl = document.getElementById('import-status');
   if (statusEl) statusEl.textContent = 'Importing...';
   chrome.bookmarks.getSubTree(chromeFolderId, async (nodes) => {
-    if (!nodes || nodes.length === 0) { if (statusEl) statusEl.textContent = 'No nodes found'; return; }
+    if (!nodes || nodes.length === 0) {
+      if (statusEl) statusEl.textContent = 'No nodes found';
+      return;
+    }
     const root = nodes[0];
     const collected = [];
     collectChromeBookmarks(root, collected);
-    if (collected.length === 0) { if (statusEl) statusEl.textContent = 'No bookmarks to import in selected folder.'; return; }
+    if (collected.length === 0) {
+      if (statusEl) statusEl.textContent = 'No bookmarks to import in selected folder.';
+      return;
+    }
     const chromeFolderName = root.title || 'Imported';
-    const res = await new Promise(r => chrome.storage.local.get(['privateFolders', 'privateFolderNextId', 'privateBookmarks', 'privateNextId'], r));
-    const folders = res.privateFolders || [];
-    const nextFolderId = res.privateFolderNextId || (folders.length + 1);
-    const newFolderId = String(nextFolderId);
-    folders.push({ id: newFolderId, name: chromeFolderName });
-    const privateBookmarks = res.privateBookmarks || [];
-    let nextBmId = res.privateNextId || (privateBookmarks.length + 1);
+    // create a new folder and add bookmarks into it
+    const folder = await db.addFolder({ name: chromeFolderName });
+    let addedCount = 0;
     for (const b of collected) {
       const added = b.dateAdded ? Number(b.dateAdded) : Date.now();
-      privateBookmarks.push({ id: String(nextBmId++), title: b.title, url: b.url, folderId: newFolderId, added });
+      await db.addBookmark({ title: b.title, url: b.url, folderId: folder.id, added });
+      addedCount++;
     }
-    await new Promise(r => chrome.storage.local.set({ privateFolders: folders, privateFolderNextId: nextFolderId + 1, privateBookmarks, privateNextId: nextBmId }, r));
-    if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
-    loadFoldersUI();
-    loadChromeFoldersIntoSelect();
+  if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
+  await loadFoldersUI();
+  await loadChromeFoldersIntoSelect();
   });
 });
 
 document.getElementById('export-html')?.addEventListener('click', async () => {
-  const res = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders'], r));
-  const bms = res.privateBookmarks || [];
-  const folders = res.privateFolders || [{ id: '1', name: 'Default' }];
+  const bms = await db.getBookmarks();
+  let folders = await db.getFolders();
+  if (!folders || folders.length === 0) folders = [{ id: '1', name: 'Default' }];
   let html = '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
   for (const folder of folders) {
     html += `<DT><H3>${folder.name}</H3>\n<DL><p>\n`;

@@ -34,6 +34,16 @@
     <button id="export-html" class="btn btn-sm btn-outline-primary">Export as HTML</button>
     <div id="import-status" aria-live="polite"></div>
   </section>
+  <section>
+    <h2>Backup / Restore</h2>
+    <p>Export the entire SQLite database to a JSON file, or restore from a previously exported file.</p>
+    <div class="mb-2">
+      <button id="export-db" class="btn btn-sm btn-outline-secondary">Export Database (JSON)</button>
+      <input id="import-db-file" type="file" accept="application/json" class="form-control-file d-inline-block ms-2" style="width:auto;" />
+      <button id="import-db" class="btn btn-sm btn-outline-danger ms-2">Restore Database</button>
+    </div>
+    <div id="backup-status" aria-live="polite"></div>
+  </section>
     <section>
       <h3>History Monitoring</h3>
       <div class="mb-3">

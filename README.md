@@ -2,7 +2,7 @@
 
 Overview
 --------
-Private Bookmark stores bookmarks and a private visit history inside the extension using `chrome.storage.local`. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.
+Private Bookmark stores bookmarks and a private visit history inside the extension using an embedded SQLite database (WASM) managed by the background worker. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.
 
 Structure
 ---------
@@ -13,7 +13,7 @@ Structure
 
 Key features
 ------------
-- Private bookmarks stored in `chrome.storage.local` under `privateBookmarks` with fields: { id, title, url, folderId, added }.
+- Private bookmarks stored in the SQLite `bookmarks` table with fields: { id, title, url, folderId, added }.
 - Folder support for organizing private bookmarks.
 - Import from Chrome bookmarks (requires `bookmarks` permission) and export to an HTML file.
 - Password-protected viewer: password hash stored under `passwordHash` (SHA-256). Changing/clearing requires the current password or the developer recovery master password (remove or replace for production).

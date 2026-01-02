@@ -116,6 +116,7 @@ const db = (function () {
       await run(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${iid}','${u}','${t}','${d}', ${ts});`);
       return { id: iid, url, title, domain, timestamp: ts };
     }
+    
   };
 })();
 

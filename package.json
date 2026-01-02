@@ -1,7 +1,7 @@
 {
   "name": "private-bookmark",
   "version": "1.0.0",
-  "description": "Overview\r --------\r Private Bookmark stores bookmarks and a private visit history inside the extension using `chrome.storage.local`. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.",
+  "description": "Overview\r --------\r Private Bookmark stores bookmarks and a private visit history inside the extension using an embedded SQLite (WASM) database managed by the background worker. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "parcel watch *.html *.js *.css --no-cache --dist-dir build",

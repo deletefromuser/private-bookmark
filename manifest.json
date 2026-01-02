@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Private Bookmark",
-  "version": "1.0",
+  "version": "20260102",
   "description": "Add/edit/delete/view private bookmarks. Password-protected view. Optional history monitoring.",
     "icons": {
     "48": "icons/logo_v1.png",
