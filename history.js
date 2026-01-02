@@ -11,8 +11,39 @@ async function loadHistory() {
   const pageSize = window.__hist_page_size = window.__hist_page_size || 20;
   const pageIndex = window.__hist_page_index = window.__hist_page_index || 0;
   const offset = pageIndex * pageSize;
-  // read from SQLite via db helper (paged)
-  const list = await window.db.getVisitHistoryPage(pageSize, offset);
+  // build filters from search UI
+  const titleFilter = (document.getElementById('search-title')?.value || '').trim();
+  const urlFilter = (document.getElementById('search-url')?.value || '').trim();
+  const startDate = document.getElementById('search-start')?.value || '';
+  const endDate = document.getElementById('search-end')?.value || '';
+
+  // build WHERE clauses (escaped) and parameters
+  const wheres = [];
+  if (titleFilter) {
+    const esc = titleFilter.replaceAll("'", "''");
+    wheres.push(`(title LIKE '%${esc}%' OR title LIKE '% ${esc}%')`);
+  }
+  if (urlFilter) {
+    const esc = urlFilter.replaceAll("'", "''");
+    wheres.push(`(url LIKE '%${esc}%' OR domain LIKE '%${esc}%')`);
+  }
+  if (startDate) {
+    const ts = Date.parse(startDate);
+    if (!Number.isNaN(ts)) wheres.push(`timestamp >= ${Number(ts)}`);
+  }
+  if (endDate) {
+    // include entire day by adding 23:59:59
+    const dt = new Date(endDate);
+    dt.setHours(23, 59, 59, 999);
+    const ts = dt.getTime();
+  if (!Number.isNaN(ts)) wheres.push(`timestamp <= ${Number(ts)}`);
+  }
+
+  const whereSql = wheres.length ? ('WHERE ' + wheres.join(' AND ')) : '';
+
+  // read from SQLite via db helper (paged) with filters
+  console.log(`SELECT id, url, title, domain, timestamp FROM visit_history ${whereSql} ORDER BY timestamp DESC LIMIT ${Number(pageSize)} OFFSET ${Number(offset)};`);
+  const list = await globalThis.db.query(`SELECT id, url, title, domain, timestamp FROM visit_history ${whereSql} ORDER BY timestamp DESC LIMIT ${Number(pageSize)} OFFSET ${Number(offset)};`);
   const container = document.getElementById('history-list');
   container.innerHTML = '';
   if (list.length === 0) {
@@ -48,10 +79,10 @@ async function loadHistory() {
     delBtn.className = 'btn btn-sm btn-danger ms-2';
     delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', async () => {
-      const ok = await window._modal.showConfirm('Delete this history entry? This cannot be undone.');
+      const ok = await globalThis._modal.showConfirm('Delete this history entry? This cannot be undone.');
       if (!ok) return;
       try {
-        await window.db.deleteHistory(e.id);
+        await globalThis.db.deleteHistory(e.id);
       } catch (err) { console.warn('Failed to delete history entry', err); }
       loadHistory();
     });
@@ -59,7 +90,9 @@ async function loadHistory() {
     ul.appendChild(li);
   });
   container.appendChild(ul);
-  const total = await window.db.countVisitHistory();
+  // count total matching rows for pagination
+  const cntRes = await globalThis.db.query(`SELECT COUNT(1) as cnt FROM visit_history ${whereSql};`);
+  const total = (cntRes && cntRes[0] && cntRes[0].cnt) ? Number(cntRes[0].cnt) : 0;
   updateHistPageInfo(pageIndex, pageSize, total);
 }
 
@@ -101,6 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const pwInput = document.getElementById('pw');
   if (pwInput) { pwInput.focus(); pwInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') document.getElementById('unlock').click(); }); }
   document.getElementById('refresh-history')?.addEventListener('click', () => { try { loadHistory(); } catch (e) { console.warn('Refresh history failed', e); } });
-  document.getElementById('hist-prev')?.addEventListener('click', () => { window.__hist_page_index = Math.max(0, (window.__hist_page_index || 0) - 1); loadHistory(); });
-  document.getElementById('hist-next')?.addEventListener('click', () => { window.__hist_page_index = (window.__hist_page_index || 0) + 1; loadHistory(); });
+  document.getElementById('hist-prev')?.addEventListener('click', () => { globalThis.__hist_page_index = Math.max(0, (globalThis.__hist_page_index || 0) - 1); loadHistory(); });
+  document.getElementById('hist-next')?.addEventListener('click', () => { globalThis.__hist_page_index = (globalThis.__hist_page_index || 0) + 1; loadHistory(); });
 });
