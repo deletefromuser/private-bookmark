@@ -159,7 +159,7 @@ function showStatus(msg, timeout = 2500) {
 }
 
 // initialize current-tab state when popup opens
-updateCurrentTabState().catch(() => {/* non-fatal */});
+updateCurrentTabState().catch(() => {/* non-fatal */ });
 // load folders for folder select
-loadFoldersIntoSelect().catch(() => {/* non-fatal */});
+loadFoldersIntoSelect().catch(() => {/* non-fatal */ });
 // (showStatus is defined above)

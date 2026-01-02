@@ -66,7 +66,7 @@ const db = (function () {
       return (r[0] && r[0].cnt) ? Number(r[0].cnt) : 0;
     },
     async addBookmark({ id, title, url, folderId, added }) {
-      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2,8);
+      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2, 8);
       const t = (title || '').replace(/'/g, "''");
       const u = (url || '').replace(/'/g, "''");
       const f = (folderId || '1').replace(/'/g, "''");
@@ -83,7 +83,7 @@ const db = (function () {
       return rawQuery('SELECT id, name FROM folders');
     },
     async addFolder({ id, name }) {
-      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2,8);
+      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2, 8);
       const n = (name || '').replace(/'/g, "''");
       await run(`INSERT OR REPLACE INTO folders(id,name) VALUES('${iid}','${n}');`);
       return { id: iid, name };
@@ -108,7 +108,7 @@ const db = (function () {
       return (r[0] && r[0].cnt) ? Number(r[0].cnt) : 0;
     },
     async addVisitHistory({ id, url, title, domain, timestamp }) {
-      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2,8);
+      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2, 8);
       const u = (url || '').replace(/'/g, "''");
       const t = (title || '').replace(/'/g, "''");
       const d = (domain || '').replace(/'/g, "''");
@@ -116,7 +116,7 @@ const db = (function () {
       await run(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${iid}','${u}','${t}','${d}', ${ts});`);
       return { id: iid, url, title, domain, timestamp: ts };
     }
-    
+
   };
 })();
 

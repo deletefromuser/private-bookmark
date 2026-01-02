@@ -1,5 +1,6 @@
 <!doctype html>
 <html>
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +10,7 @@
   <link rel="stylesheet" href="styles.css">
   <script src="modal.js"></script>
 </head>
+
 <body class="option-page">
   <h1>Options</h1>
   <section>
@@ -39,38 +41,42 @@
     <p>Export the entire SQLite database to a JSON file, or restore from a previously exported file.</p>
     <div class="mb-2">
       <button id="export-db" class="btn btn-sm btn-outline-secondary">Export Database (JSON)</button>
-      <input id="import-db-file" type="file" accept="application/json" class="form-control-file d-inline-block ms-2" style="width:auto;" />
+      <input id="import-db-file" type="file" accept="application/json" class="form-control-file d-inline-block ms-2"
+        style="width:auto;" />
       <button id="import-db" class="btn btn-sm btn-outline-danger ms-2">Restore Database</button>
     </div>
     <div id="backup-status" aria-live="polite"></div>
   </section>
-    <section>
-      <h3>History Monitoring</h3>
-      <div class="mb-3">
-        <p>Monitored domains: visits to these domains will be recorded to the extension's private history and removed from the browser's native history.</p>
-        <div id="monitored-domains-list" class="mb-2"></div>
-        <div class="input-group mb-2">
-          <input id="new-monitored-domain" class="form-control" placeholder="example.com" />
-          <button id="add-monitored-domain" class="btn btn-outline-primary">Add Domain</button>
-        </div>
-        <button id="clear-monitored-domains" class="btn btn-outline-danger">Clear All Monitored Domains</button>
+  <section>
+    <h3>History Monitoring</h3>
+    <div class="mb-3">
+      <p>Monitored domains: visits to these domains will be recorded to the extension's private history and removed from
+        the browser's native history.</p>
+      <div id="monitored-domains-list" class="mb-2"></div>
+      <div class="input-group mb-2">
+        <input id="new-monitored-domain" class="form-control" placeholder="example.com" />
+        <button id="add-monitored-domain" class="btn btn-outline-primary">Add Domain</button>
       </div>
-    </section>
+      <button id="clear-monitored-domains" class="btn btn-outline-danger">Clear All Monitored Domains</button>
+    </div>
+  </section>
 
-      <section>
-        <h3>Private Visit History</h3>
-        <p>Visits recorded for monitored domains (native history is removed).</p>
-        <div id="visit-history-list" class="mb-2"></div>
-  <button id="export-visit-history" class="btn btn-sm btn-outline-primary">Export Visit History (JSON)</button>
-  <button id="clear-visit-history" class="btn btn-sm btn-outline-danger ms-2">Clear Visit History</button>
-      </section>
+  <section>
+    <h3>Private Visit History</h3>
+    <p>Visits recorded for monitored domains (native history is removed).</p>
+    <div id="visit-history-list" class="mb-2"></div>
+    <button id="export-visit-history" class="btn btn-sm btn-outline-primary">Export Visit History (JSON)</button>
+    <button id="clear-visit-history" class="btn btn-sm btn-outline-danger ms-2">Clear Visit History</button>
+  </section>
   <section>
     <h3>Storage Migration</h3>
-    <p>Upgrade extension storage to the new SQLite-backed database. This runs a one-time migration from the existing extension storage into the embedded SQLite DB used by the extension.</p>
+    <p>Upgrade extension storage to the new SQLite-backed database. This runs a one-time migration from the existing
+      extension storage into the embedded SQLite DB used by the extension.</p>
     <button id="migrate-db" class="btn btn-warning">Migrate to SQLite</button>
     <div id="migration-status" class="mt-2" aria-live="polite"></div>
   </section>
   <script src="db.js"></script>
   <script src="options.js"></script>
 </body>
+
 </html>

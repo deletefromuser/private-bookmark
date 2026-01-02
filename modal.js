@@ -1,5 +1,5 @@
 // Simple in-page modal helpers returning Promises
-(function(){
+(function () {
   function createModal() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -29,12 +29,12 @@
     });
   }
 
-  function showTextPrompt(message, defaultValue='') {
+  function showTextPrompt(message, defaultValue = '') {
     return new Promise(res => {
       const modal = createModal();
       const content = modal.querySelector('.modal-content');
       content.innerHTML = `<div class="modal-msg">${message}</div>`;
-      const input = document.createElement('input'); input.type='text'; input.value = defaultValue; input.style.width = '100%';
+      const input = document.createElement('input'); input.type = 'text'; input.value = defaultValue; input.style.width = '100%';
       content.appendChild(input);
       const actions = modal.querySelector('.modal-actions');
       const ok = document.createElement('button'); ok.textContent = 'OK';
@@ -43,7 +43,7 @@
       input.focus(); input.select();
       ok.addEventListener('click', () => { cleanup(modal); res(input.value); });
       cancel.addEventListener('click', () => { cleanup(modal); res(null); });
-      input.addEventListener('keydown', (ev) => { if (ev.key==='Enter') ok.click(); if (ev.key==='Escape') cancel.click(); });
+      input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ok.click(); if (ev.key === 'Escape') cancel.click(); });
     });
   }
 
@@ -54,8 +54,8 @@
       const content = modal.querySelector('.modal-content');
       fields.forEach(f => {
         const label = document.createElement('div'); label.textContent = f.label; content.appendChild(label);
-        const input = document.createElement('input'); input.type='text'; input.name = f.name; input.value = f.value || ''; input.placeholder = f.placeholder || '';
-        input.style.width='100%'; content.appendChild(input);
+        const input = document.createElement('input'); input.type = 'text'; input.name = f.name; input.value = f.value || ''; input.placeholder = f.placeholder || '';
+        input.style.width = '100%'; content.appendChild(input);
       });
       const inputs = content.querySelectorAll('input'); if (inputs[0]) inputs[0].focus();
       const actions = modal.querySelector('.modal-actions');
@@ -67,8 +67,8 @@
         cleanup(modal); res(out);
       });
       cancel.addEventListener('click', () => { cleanup(modal); res(null); });
-      modal.addEventListener('keydown', (ev) => { if (ev.key==='Escape') cancel.click(); });
-      inputs.forEach(i => i.addEventListener('keydown', (ev) => { if (ev.key==='Enter') ok.click(); }));
+      modal.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') cancel.click(); });
+      inputs.forEach(i => i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') ok.click(); }));
     });
   }
 

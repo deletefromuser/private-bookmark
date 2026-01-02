@@ -253,8 +253,8 @@ async function migrateLocalStorageToSQLite() {
       await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`);
     }
 
-  // set migrated flag in settings table so we won't re-run
-  await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('db_migrated_v1','true');`);
+    // set migrated flag in settings table so we won't re-run
+    await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('db_migrated_v1','true');`);
     console.log('Migration completed successfully');
   } catch (e) {
     console.error('Migration failed', e);

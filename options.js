@@ -269,17 +269,17 @@ async function showDeleteFolderPrompt(folderId) {
   document.getElementById('del-confirm').addEventListener('click', async () => {
     const action = promptDiv.querySelector('input[name="del-action"]:checked').value;
     if (action === 'delete') {
-  const fid = String(folderId).replaceAll("'", "''");
-  await db.run(`DELETE FROM bookmarks WHERE folderId='${fid}';`);
-  await db.run(`DELETE FROM folders WHERE id='${fid}';`);
+      const fid = String(folderId).replaceAll("'", "''");
+      await db.run(`DELETE FROM bookmarks WHERE folderId='${fid}';`);
+      await db.run(`DELETE FROM folders WHERE id='${fid}';`);
     } else {
       const sel = document.getElementById('delete-move-target');
       if (!sel || !sel.value) return alert('No target folder selected');
       const targetId = sel.value;
-  const fid = String(folderId).replaceAll("'", "''");
-  const tid = String(targetId).replaceAll("'", "''");
-  await db.run(`UPDATE bookmarks SET folderId='${tid}' WHERE folderId='${fid}';`);
-  await db.run(`DELETE FROM folders WHERE id='${fid}';`);
+      const fid = String(folderId).replaceAll("'", "''");
+      const tid = String(targetId).replaceAll("'", "''");
+      await db.run(`UPDATE bookmarks SET folderId='${tid}' WHERE folderId='${fid}';`);
+      await db.run(`DELETE FROM folders WHERE id='${fid}';`);
     }
     promptDiv.remove();
     loadFoldersUI();
@@ -296,7 +296,7 @@ document.getElementById('create-folder')?.addEventListener('click', async () => 
 });
 
 // delegate rename/delete actions
-  document.getElementById('folders-list')?.addEventListener('click', (e) => {
+document.getElementById('folders-list')?.addEventListener('click', (e) => {
   const btn = e.target;
   if (!btn) return;
   if (btn.classList.contains('rename-folder')) {
@@ -371,9 +371,9 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
       await db.addBookmark({ title: b.title, url: b.url, folderId: folder.id, added });
       addedCount++;
     }
-  if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
-  await loadFoldersUI();
-  await loadChromeFoldersIntoSelect();
+    if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
+    await loadFoldersUI();
+    await loadChromeFoldersIntoSelect();
   });
 });
 

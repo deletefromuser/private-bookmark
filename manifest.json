@@ -3,11 +3,16 @@
   "name": "Private Bookmark",
   "version": "20260102",
   "description": "Add/edit/delete/view private bookmarks. Password-protected view. Optional history monitoring.",
-    "icons": {
+  "icons": {
     "48": "icons/logo_v1.png",
     "96": "icons/logo_v1.png"
   },
-  "permissions": ["storage", "tabs", "bookmarks", "history"],
+  "permissions": [
+    "storage",
+    "tabs",
+    "bookmarks",
+    "history"
+  ],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
@@ -21,10 +26,9 @@
     }
   },
   "background": {
-    "service_worker": "background.js", 
+    "service_worker": "background.js",
     "type": "module"
-  }
-  ,
+  },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true

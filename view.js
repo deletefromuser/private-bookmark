@@ -3,7 +3,7 @@ async function sha256(text) {
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2,'0')).join('');
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // load chrome bookmark folders into select
@@ -33,7 +33,7 @@ async function loadBookmarks() {
     const row = document.createElement('div');
     row.className = 'bm-row';
     const folderSelectHtml = `<select data-id="${n.id}" class="move-select form-select mb-2">` +
-      (folders || []).map(f => `<option value="${f.id}" ${f.id=== (n.folderId||'1')? 'selected':''}>${f.name}</option>`).join('') +
+      (folders || []).map(f => `<option value="${f.id}" ${f.id === (n.folderId || '1') ? 'selected' : ''}>${f.name}</option>`).join('') +
       `</select>`;
     const added = n.added ? new Date(Number(n.added)).toLocaleString() : '';
     const addedHtml = added ? `<span class="bm-added">${added}</span>` : '';
@@ -76,12 +76,12 @@ document.getElementById('unlock').addEventListener('click', async () => {
     loadBookmarks();
     return;
   }
-    const hash = await sha256(pw);
-    if (!pw) return showUnlockError('Password required');
+  const hash = await sha256(pw);
+  if (!pw) return showUnlockError('Password required');
   if (hash === stored) {
     document.getElementById('auth').style.display = 'none';
     document.getElementById('content').style.display = 'block';
-  loadBookmarks();
+    loadBookmarks();
   } else alert('Wrong password');
 });
 
@@ -139,7 +139,7 @@ document.getElementById('bm-next')?.addEventListener('click', () => {
 });
 
 // initial check
-(async function(){
+(async function () {
   const stored = await globalThis.db.getPasswordHash();
   const authMsg = document.getElementById('auth-msg');
   if (!stored) {
