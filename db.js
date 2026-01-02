@@ -23,6 +23,27 @@ const db = (function () {
     });
   }
 
+  async function rawQueryWithParams(sql, params) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.runtime.sendMessage({ action: 'QUERY_PARAMS', payload: { sql, params } }, (resp) => {
+          if (!resp) return reject(new Error('No response from background'));
+          if (resp.status !== 'success') return reject(new Error(resp.message || 'Query failed'));
+          const out = [];
+          for (const block of resp.data || []) {
+            const cols = block.columns || [];
+            for (const r of block.rows || []) {
+              const obj = {};
+              for (let i = 0; i < cols.length; i++) obj[cols[i]] = r[i];
+              out.push(obj);
+            }
+          }
+          resolve(out);
+        });
+      } catch (e) { reject(e); }
+    });
+  }
+
   async function run(sql) {
     // for statements that don't return rows
     await rawQuery(sql);
@@ -31,6 +52,7 @@ const db = (function () {
   // Convenience methods
   return {
     query: rawQuery,
+    queryWithParams: rawQueryWithParams,
     run,
     async getPasswordHash() {
       const result = await rawQuery(`SELECT v FROM settings WHERE k = 'passwordHash';`);
@@ -48,11 +70,11 @@ const db = (function () {
       await run(`DELETE FROM settings WHERE k = 'passwordHash';`);
     },
     async deleteBookmark(id) {
-      const iid = String(id).replace(/'/g, "''");
+      const iid = String(id).replaceAll("'", "''");
       await run(`DELETE FROM bookmarks WHERE id='${iid}';`);
     },
     async deleteHistory(id) {
-      const iid = String(id).replace(/'/g, "''");
+      const iid = String(id).replaceAll("'", "''");
       await run(`DELETE FROM visit_history WHERE id='${iid}';`);
     },
     async getBookmarks() {
@@ -66,16 +88,16 @@ const db = (function () {
       return (r[0] && r[0].cnt) ? Number(r[0].cnt) : 0;
     },
     async addBookmark({ id, title, url, folderId, added }) {
-      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2, 8);
-      const t = (title || '').replace(/'/g, "''");
-      const u = (url || '').replace(/'/g, "''");
-      const f = (folderId || '1').replace(/'/g, "''");
+      const iid = id || (String(Date.now()) + Math.random().toString(36).slice(2, 8));
+      const t = (title || '').replaceAll("'", "''");
+      const u = (url || '').replaceAll("'", "''");
+      const f = (folderId || '1').replaceAll("'", "''");
       const a = Number(added) || Date.now();
       await run(`INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${iid}','${t}','${u}','${f}', ${a});`);
       return { id: iid, title, url, folderId: f, added: a };
     },
     async findBookmarkByUrl(url) {
-      const u = (url || '').replace(/'/g, "''");
+      const u = (url || '').replaceAll("'", "''");
       const r = await rawQuery(`SELECT id, title, url, folderId, added FROM bookmarks WHERE url='${u}' LIMIT 1;`);
       return r[0] || null;
     },
@@ -83,8 +105,8 @@ const db = (function () {
       return rawQuery('SELECT id, name FROM folders');
     },
     async addFolder({ id, name }) {
-      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2, 8);
-      const n = (name || '').replace(/'/g, "''");
+      const iid = id || (String(Date.now()) + Math.random().toString(36).slice(2, 8));
+      const n = (name || '').replaceAll("'", "''");
       await run(`INSERT OR REPLACE INTO folders(id,name) VALUES('${iid}','${n}');`);
       return { id: iid, name };
     },
@@ -92,7 +114,7 @@ const db = (function () {
       return (await rawQuery('SELECT domain FROM monitored_domains')).map(r => r.domain);
     },
     async addMonitoredDomain(domain) {
-      const d = (domain || '').replace(/'/g, "''");
+      const d = (domain || '').replaceAll("'", "''");
       await run(`INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${d}');`);
     },
     async getVisitHistory(limit = 100) {
@@ -108,10 +130,10 @@ const db = (function () {
       return (r[0] && r[0].cnt) ? Number(r[0].cnt) : 0;
     },
     async addVisitHistory({ id, url, title, domain, timestamp }) {
-      const iid = id ? id : String(Date.now()) + Math.random().toString(36).slice(2, 8);
-      const u = (url || '').replace(/'/g, "''");
-      const t = (title || '').replace(/'/g, "''");
-      const d = (domain || '').replace(/'/g, "''");
+      const iid = id || (String(Date.now()) + Math.random().toString(36).slice(2, 8));
+      const u = (url || '').replaceAll("'", "''");
+      const t = (title || '').replaceAll("'", "''");
+      const d = (domain || '').replaceAll("'", "''");
       const ts = Number(timestamp) || Date.now();
       await run(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${iid}','${u}','${t}','${d}', ${ts});`);
       return { id: iid, url, title, domain, timestamp: ts };
@@ -121,4 +143,4 @@ const db = (function () {
 })();
 
 // expose globally
-window.db = db;
+globalThis.db = db;

@@ -8,8 +8,8 @@ async function sha256(text) {
 
 async function loadHistory() {
   // pagination params
-  const pageSize = window.__hist_page_size = window.__hist_page_size || 20;
-  const pageIndex = window.__hist_page_index = window.__hist_page_index || 0;
+  const pageSize = globalThis.__hist_page_size = globalThis.__hist_page_size || 20;
+  const pageIndex = globalThis.__hist_page_index = globalThis.__hist_page_index || 0;
   const offset = pageIndex * pageSize;
   // build filters from search UI
   const titleFilter = (document.getElementById('search-title')?.value || '').trim();
@@ -17,33 +17,45 @@ async function loadHistory() {
   const startDate = document.getElementById('search-start')?.value || '';
   const endDate = document.getElementById('search-end')?.value || '';
 
-  // build WHERE clauses (escaped) and parameters
+  // build WHERE clauses and params for a parameterized query
   const wheres = [];
+  const params = [];
   if (titleFilter) {
-    const esc = titleFilter.replaceAll("'", "''");
-    wheres.push(`(title LIKE '%${esc}%' OR title LIKE '% ${esc}%')`);
+    // match keywords anywhere; also match words prefixed with space
+    wheres.push('(title LIKE ? OR title LIKE ?)');
+    params.push(`%${titleFilter}%`, `% ${titleFilter}%`);
   }
   if (urlFilter) {
-    const esc = urlFilter.replaceAll("'", "''");
-    wheres.push(`(url LIKE '%${esc}%' OR domain LIKE '%${esc}%')`);
+    wheres.push('(url LIKE ? OR domain LIKE ?)');
+    params.push(`%${urlFilter}%`, `%${urlFilter}%`);
   }
   if (startDate) {
     const ts = Date.parse(startDate);
-    if (!Number.isNaN(ts)) wheres.push(`timestamp >= ${Number(ts)}`);
+    if (!Number.isNaN(ts)) {
+      wheres.push('timestamp >= ?');
+      params.push(Number(ts));
+    }
   }
   if (endDate) {
     // include entire day by adding 23:59:59
     const dt = new Date(endDate);
     dt.setHours(23, 59, 59, 999);
     const ts = dt.getTime();
-  if (!Number.isNaN(ts)) wheres.push(`timestamp <= ${Number(ts)}`);
+    if (!Number.isNaN(ts)) {
+      wheres.push('timestamp <= ?');
+      params.push(Number(ts));
+    }
   }
 
   const whereSql = wheres.length ? ('WHERE ' + wheres.join(' AND ')) : '';
 
   // read from SQLite via db helper (paged) with filters
-  console.log(`SELECT id, url, title, domain, timestamp FROM visit_history ${whereSql} ORDER BY timestamp DESC LIMIT ${Number(pageSize)} OFFSET ${Number(offset)};`);
-  const list = await globalThis.db.query(`SELECT id, url, title, domain, timestamp FROM visit_history ${whereSql} ORDER BY timestamp DESC LIMIT ${Number(pageSize)} OFFSET ${Number(offset)};`);
+  // query with params (add LIMIT/OFFSET as parameters)
+  const selectSql = `SELECT id, url, title, domain, timestamp FROM visit_history ${whereSql} ORDER BY timestamp DESC LIMIT ? OFFSET ?;`;
+  const selectParams = params.slice();
+  selectParams.push(Number(pageSize), Number(offset));
+  console.log(selectSql, selectParams);
+  const list = await globalThis.db.queryWithParams(selectSql, selectParams);
   const container = document.getElementById('history-list');
   container.innerHTML = '';
   if (list.length === 0) {
@@ -91,7 +103,9 @@ async function loadHistory() {
   });
   container.appendChild(ul);
   // count total matching rows for pagination
-  const cntRes = await globalThis.db.query(`SELECT COUNT(1) as cnt FROM visit_history ${whereSql};`);
+  const cntSql = `SELECT COUNT(1) as cnt FROM visit_history ${whereSql};`;
+  const cntParams = params.slice();
+  const cntRes = await globalThis.db.queryWithParams(cntSql, cntParams);
   const total = (cntRes && cntRes[0] && cntRes[0].cnt) ? Number(cntRes[0].cnt) : 0;
   updateHistPageInfo(pageIndex, pageSize, total);
 }
@@ -136,4 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('refresh-history')?.addEventListener('click', () => { try { loadHistory(); } catch (e) { console.warn('Refresh history failed', e); } });
   document.getElementById('hist-prev')?.addEventListener('click', () => { globalThis.__hist_page_index = Math.max(0, (globalThis.__hist_page_index || 0) - 1); loadHistory(); });
   document.getElementById('hist-next')?.addEventListener('click', () => { globalThis.__hist_page_index = (globalThis.__hist_page_index || 0) + 1; loadHistory(); });
+  document.getElementById('search-run')?.addEventListener('click', () => { globalThis.__hist_page_index = 0; loadHistory(); });
+  document.getElementById('search-clear')?.addEventListener('click', () => {
+    const t = document.getElementById('search-title');
+    if (t) { t.value = ''; }
+    const u = document.getElementById('search-url');
+    if (u) { u.value = ''; }
+    const s = document.getElementById('search-start');
+    if (s) { s.value = ''; }
+    const e = document.getElementById('search-end');
+    if (e) { e.value = ''; }
+    globalThis.__hist_page_index = 0;
+    loadHistory();
+  });
 });

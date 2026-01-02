@@ -88,11 +88,35 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
       console.log("mi fail");
       sendResponse({ status: 'error', action: 'MIGRATE_DB', message: String(err) });
     });
+  } else if (data.action === 'QUERY_PARAMS') {
+    const { sql, params } = data.payload || {};
+    try {
+      // simple param replacement: replace ? placeholders in order
+      let outSql = sql;
+      if (Array.isArray(params) && params.length > 0) {
+        for (const p of params) {
+          let rep;
+          if (p === null || p === undefined) rep = "''";
+          else if (typeof p === 'number') rep = String(p);
+          else {
+            const s = String(p).replaceAll("'", "''");
+            rep = `'${s}'`;
+          }
+          outSql = outSql.replace('?', rep);
+        }
+      }
+      console.log(outSql);
+      exec(outSql).then(result => sendResponse({ status: 'success', action: 'QUERY_PARAMS', data: result })).catch(err => sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(err) }));
+    } catch (e) {
+      sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(e) });
+    }
+    return true;
   } else {
     sendResponse({ status: 'error', action: 'unknown action' });
   }
   return true;
 });
+
 
 // (removed unused helper)
 
