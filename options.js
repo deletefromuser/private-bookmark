@@ -216,6 +216,13 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
   }
 });
 
+// Open SQL console in a new tab
+document.getElementById('open-sql-console')?.addEventListener('click', () => {
+  try {
+    window.open('sql.html', '_blank');
+  } catch (e) { console.warn('Open SQL console failed', e); }
+});
+
 // Open visit history viewer moved to popup
 
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
