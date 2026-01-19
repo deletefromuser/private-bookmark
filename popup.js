@@ -3,12 +3,19 @@ async function sha256(text) {
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
-  return await globalThis.db.addBookmark({ title: title || url, url, folderId: folderId || '1', added: Date.now() });
+  return await globalThis.db.addBookmark({
+    title: title || url,
+    url,
+    folderId: folderId || '1',
+    added: Date.now(),
+  });
 }
 
 function normalizeUrl(u) {
@@ -59,7 +66,9 @@ async function updateCurrentTabState() {
     }
   };
 
-  const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+  const tabs = await new Promise((r) =>
+    chrome.tabs.query({ active: true, currentWindow: true }, r)
+  );
   if (!tabs || tabs.length === 0) {
     if (addCurrentBtn) addCurrentBtn.disabled = false;
     setBadge('');
@@ -77,7 +86,9 @@ async function updateCurrentTabState() {
 }
 
 async function addCurrentTab() {
-  const tabs = await new Promise(r => chrome.tabs.query({ active: true, currentWindow: true }, r));
+  const tabs = await new Promise((r) =>
+    chrome.tabs.query({ active: true, currentWindow: true }, r)
+  );
   if (!tabs || tabs.length === 0) return;
   const t = tabs[0];
   const addBtn = document.getElementById('add-bookmark');
@@ -106,47 +117,56 @@ document.getElementById('open-options')?.addEventListener('click', () => {
 
 // bookmark list UI removed from popup; edit/delete handled in view.html
 
-document.getElementById('add-bookmark').addEventListener('click', () => {
-  const title = document.getElementById('title').value;
-  const url = document.getElementById('url').value;
-  if (!url) return alert('URL required');
-  const addBtn = document.getElementById('add-bookmark');
-  const addCurrentBtn = document.getElementById('add-current');
-  addBtn.disabled = true;
-  addCurrentBtn.disabled = true;
-  const folderId = document.getElementById('folder-select')?.value;
-  addBookmark(title, url, folderId).then(() => showStatus('Bookmark added')).catch(err => console.warn('Add failed', err)).finally(() => {
-    addBtn.disabled = false;
-    addCurrentBtn.disabled = false;
-    updateCurrentTabState();
+document
+  .getElementById('add-bookmark')
+  .addEventListener('click', () => {
+    const title = document.getElementById('title').value;
+    const url = document.getElementById('url').value;
+    if (!url) return alert('URL required');
+    const addBtn = document.getElementById('add-bookmark');
+    const addCurrentBtn = document.getElementById('add-current');
+    addBtn.disabled = true;
+    addCurrentBtn.disabled = true;
+    const folderId = document.getElementById('folder-select')?.value;
+    addBookmark(title, url, folderId)
+      .then(() => showStatus('Bookmark added'))
+      .catch((err) => console.warn('Add failed', err))
+      .finally(() => {
+        addBtn.disabled = false;
+        addCurrentBtn.disabled = false;
+        updateCurrentTabState();
+      });
+    document.getElementById('title').value = '';
+    document.getElementById('url').value = '';
   });
-  document.getElementById('title').value = '';
-  document.getElementById('url').value = '';
-});
 
 document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
-document.getElementById('add-current-domain')?.addEventListener('click', async () => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.url) return showStatus('No active tab URL');
-  const url = new URL(tab.url);
-  const domain = url.hostname.replace(/^www\./, '');
-  const list = await globalThis.db.getMonitoredDomains();
-  if (list.includes(domain)) {
-    showStatus('Domain is already monitored');
-  } else {
-    await globalThis.db.addMonitoredDomain(domain);
-    showStatus('Domain added to monitored list');
-  }
-});
+document
+  .getElementById('add-current-domain')
+  ?.addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || !tab.url) return showStatus('No active tab URL');
+    const url = new URL(tab.url);
+    const domain = url.hostname.replace(/^www\./, '');
+    const list = await globalThis.db.getMonitoredDomains();
+    if (list.includes(domain)) {
+      showStatus('Domain is already monitored');
+    } else {
+      await globalThis.db.addMonitoredDomain(domain);
+      showStatus('Domain added to monitored list');
+    }
+  });
 
 document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
 });
 
-document.getElementById('open-history-viewer')?.addEventListener('click', async () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
-});
+document
+  .getElementById('open-history-viewer')
+  ?.addEventListener('click', async () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+  });
 
 // initial: popup only provides add/current/options/view functionality
 
@@ -155,11 +175,17 @@ function showStatus(msg, timeout = 2500) {
   const el = document.getElementById('status');
   if (!el) return;
   el.textContent = msg;
-  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, timeout);
+  setTimeout(() => {
+    if (el.textContent === msg) el.textContent = '';
+  }, timeout);
 }
 
 // initialize current-tab state when popup opens
-updateCurrentTabState().catch(() => {/* non-fatal */ });
+updateCurrentTabState().catch(() => {
+  /* non-fatal */
+});
 // load folders for folder select
-loadFoldersIntoSelect().catch(() => {/* non-fatal */ });
+loadFoldersIntoSelect().catch(() => {
+  /* non-fatal */
+});
 // (showStatus is defined above)

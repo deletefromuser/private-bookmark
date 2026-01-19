@@ -3,13 +3,17 @@ async function sha256(text) {
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 async function loadHistory() {
   // pagination params
-  const pageSize = globalThis.__hist_page_size = globalThis.__hist_page_size || 20;
-  const pageIndex = globalThis.__hist_page_index = globalThis.__hist_page_index || 0;
+  const pageSize = (globalThis.__hist_page_size =
+    globalThis.__hist_page_size || 20);
+  const pageIndex = (globalThis.__hist_page_index =
+    globalThis.__hist_page_index || 0);
   const offset = pageIndex * pageSize;
   // build filters from search UI
   const titleFilter = (document.getElementById('search-title')?.value || '').trim();
@@ -47,7 +51,7 @@ async function loadHistory() {
     }
   }
 
-  const whereSql = wheres.length ? ('WHERE ' + wheres.join(' AND ')) : '';
+  const whereSql = wheres.length ? 'WHERE ' + wheres.join(' AND ') : '';
 
   // read from SQLite via db helper (paged) with filters
   // query with params (add LIMIT/OFFSET as parameters)
@@ -69,7 +73,7 @@ async function loadHistory() {
   const ul = document.createElement('ul');
   ul.className = 'list-group';
   // show newest first
-  list.forEach(e => {
+  list.forEach((e) => {
     const li = document.createElement('li');
     li.className = 'list-group-item d-flex justify-content-between align-items-start';
     const left = document.createElement('div');
@@ -91,11 +95,15 @@ async function loadHistory() {
     delBtn.className = 'btn btn-sm btn-danger ms-2';
     delBtn.textContent = 'Delete';
     delBtn.addEventListener('click', async () => {
-      const ok = await globalThis._modal.showConfirm('Delete this history entry? This cannot be undone.');
+      const ok = await globalThis._modal.showConfirm(
+        'Delete this history entry? This cannot be undone.'
+      );
       if (!ok) return;
       try {
         await globalThis.db.deleteHistory(e.id);
-      } catch (err) { console.warn('Failed to delete history entry', err); }
+      } catch (err) {
+        console.warn('Failed to delete history entry', err);
+      }
       loadHistory();
     });
     li.appendChild(delBtn);
@@ -106,7 +114,7 @@ async function loadHistory() {
   const cntSql = `SELECT COUNT(1) as cnt FROM visit_history ${whereSql};`;
   const cntParams = params.slice();
   const cntRes = await globalThis.db.queryWithParams(cntSql, cntParams);
-  const total = (cntRes && cntRes[0] && cntRes[0].cnt) ? Number(cntRes[0].cnt) : 0;
+  const total = cntRes && cntRes[0] && cntRes[0].cnt ? Number(cntRes[0].cnt) : 0;
   updateHistPageInfo(pageIndex, pageSize, total);
 }
 
@@ -123,7 +131,10 @@ function updateHistPageInfo(pageIndex, pageSize, total) {
 
 function showUnlockError(msg) {
   const authMsg = document.getElementById('auth-msg');
-  if (authMsg) { authMsg.textContent = msg; authMsg.style.color = 'red'; }
+  if (authMsg) {
+    authMsg.textContent = msg;
+    authMsg.style.color = 'red';
+  }
 }
 
 document.getElementById('unlock')?.addEventListener('click', async () => {
@@ -146,20 +157,53 @@ document.getElementById('unlock')?.addEventListener('click', async () => {
 document.getElementById('close')?.addEventListener('click', () => window.close());
 document.addEventListener('DOMContentLoaded', () => {
   const pwInput = document.getElementById('pw');
-  if (pwInput) { pwInput.focus(); pwInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') document.getElementById('unlock').click(); }); }
-  document.getElementById('refresh-history')?.addEventListener('click', () => { try { loadHistory(); } catch (e) { console.warn('Refresh history failed', e); } });
-  document.getElementById('hist-prev')?.addEventListener('click', () => { globalThis.__hist_page_index = Math.max(0, (globalThis.__hist_page_index || 0) - 1); loadHistory(); });
-  document.getElementById('hist-next')?.addEventListener('click', () => { globalThis.__hist_page_index = (globalThis.__hist_page_index || 0) + 1; loadHistory(); });
-  document.getElementById('search-run')?.addEventListener('click', () => { globalThis.__hist_page_index = 0; loadHistory(); });
+  if (pwInput) {
+    pwInput.focus();
+    pwInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') document.getElementById('unlock').click();
+    });
+  }
+  document
+    .getElementById('refresh-history')
+    ?.addEventListener('click', () => {
+      try {
+        loadHistory();
+      } catch (e) {
+        console.warn('Refresh history failed', e);
+      }
+    });
+  document.getElementById('hist-prev')?.addEventListener('click', () => {
+    globalThis.__hist_page_index = Math.max(
+      0,
+      (globalThis.__hist_page_index || 0) - 1
+    );
+    loadHistory();
+  });
+  document.getElementById('hist-next')?.addEventListener('click', () => {
+    globalThis.__hist_page_index = (globalThis.__hist_page_index || 0) + 1;
+    loadHistory();
+  });
+  document.getElementById('search-run')?.addEventListener('click', () => {
+    globalThis.__hist_page_index = 0;
+    loadHistory();
+  });
   document.getElementById('search-clear')?.addEventListener('click', () => {
     const t = document.getElementById('search-title');
-    if (t) { t.value = ''; }
+    if (t) {
+      t.value = '';
+    }
     const u = document.getElementById('search-url');
-    if (u) { u.value = ''; }
+    if (u) {
+      u.value = '';
+    }
     const s = document.getElementById('search-start');
-    if (s) { s.value = ''; }
+    if (s) {
+      s.value = '';
+    }
     const e = document.getElementById('search-end');
-    if (e) { e.value = ''; }
+    if (e) {
+      e.value = '';
+    }
     globalThis.__hist_page_index = 0;
     loadHistory();
   });

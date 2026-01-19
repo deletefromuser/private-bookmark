@@ -1,8 +1,8 @@
 // background service worker: create a private folder on install
 // background service worker: create a private bookmarks container on install
 chrome.runtime.onInstalled.addListener(() => {
-  createSchema().then(item => {
-    console.log("schema created");
+  createSchema().then((item) => {
+    console.log('schema created');
   });
 });
 
@@ -13,9 +13,14 @@ const DEBOUNCE_MS = 5000;
 async function handlePossibleVisit(url, title) {
   if (!url) return;
   let parsed;
-  try { parsed = new URL(url); } catch (e) { console.warn('handlePossibleVisit parse failed', e); return; }
+  try {
+    parsed = new URL(url);
+  } catch (e) {
+    console.warn('handlePossibleVisit parse failed', e);
+    return;
+  }
   const domain = parsed.hostname.replace(/^www\./, '');
-  if (!await isDomainMonitored(domain)) return;
+  if (!(await isDomainMonitored(domain))) return;
   const now = Date.now();
   const last = recentSeen.get(url) || 0;
   if (now - last < DEBOUNCE_MS) return; // skip duplicates
@@ -29,11 +34,17 @@ async function handlePossibleVisit(url, title) {
   const titleEsc = esc(finalTitle);
   const domainEsc = esc(domain);
   try {
-    await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${urlEsc}','${titleEsc}','${domainEsc}', ${now});`);
+    await exec(
+      `INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${urlEsc}','${titleEsc}','${domainEsc}', ${now});`
+    );
   } catch (e) {
     console.warn('Failed to insert visit_history', e);
   }
-  try { chrome.history.deleteUrl({ url }); } catch (e) { console.warn('Failed to delete native history url', e); }
+  try {
+    chrome.history.deleteUrl({ url });
+  } catch (e) {
+    console.warn('Failed to delete native history url', e);
+  }
 }
 
 // Attempt automatic migration at startup (safe: routine checks for a migration flag)
@@ -62,32 +73,37 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
-
 chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
   console.log(data);
   if (data.action === 'QUERY') {
-    exec(data.payload.sql).then(result => {
-      console.log(result);
-      sendResponse({ status: 'success', action: 'QUERY', data: result });
-    }).catch(err => {
-      console.log("QUERY fail");
-      sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
-    });
-  } else if (data.action === 'MIGRATE_DB') {
-    console.log("mi start");
-    // run migration and reply when done
-    migrateLocalStorageToSQLite().then(() => {
-      exec("select * from visit_history").then(result => {
+    exec(data.payload.sql)
+      .then((result) => {
         console.log(result);
-      }).catch(err => {
-        console.log("QUERY fail");
+        sendResponse({ status: 'success', action: 'QUERY', data: result });
+      })
+      .catch((err) => {
+        console.log('QUERY fail');
         sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
       });
-      sendResponse({ status: 'success', action: 'MIGRATE_DB' });
-    }).catch(err => {
-      console.log("mi fail");
-      sendResponse({ status: 'error', action: 'MIGRATE_DB', message: String(err) });
-    });
+  } else if (data.action === 'MIGRATE_DB') {
+    console.log('mi start');
+    // run migration and reply when done
+    migrateLocalStorageToSQLite()
+      .then(() => {
+        exec('select * from visit_history')
+          .then((result) => {
+            console.log(result);
+          })
+          .catch((err) => {
+            console.log('QUERY fail');
+            sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
+          });
+        sendResponse({ status: 'success', action: 'MIGRATE_DB' });
+      })
+      .catch((err) => {
+        console.log('mi fail');
+        sendResponse({ status: 'error', action: 'MIGRATE_DB', message: String(err) });
+      });
   } else if (data.action === 'QUERY_PARAMS') {
     const { sql, params } = data.payload || {};
     try {
@@ -106,7 +122,13 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
         }
       }
       console.log(outSql);
-      exec(outSql).then(result => sendResponse({ status: 'success', action: 'QUERY_PARAMS', data: result })).catch(err => sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(err) }));
+      exec(outSql)
+        .then((result) =>
+          sendResponse({ status: 'success', action: 'QUERY_PARAMS', data: result })
+        )
+        .catch((err) =>
+          sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(err) })
+        );
     } catch (e) {
       sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(e) });
     }
@@ -116,7 +138,6 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
   }
   return true;
 });
-
 
 // (removed unused helper)
 
@@ -158,12 +179,12 @@ async function createSchema() {
     `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY);`,
     `CREATE TABLE IF NOT EXISTS visit_history(id TEXT PRIMARY KEY, url TEXT, title TEXT, domain TEXT, timestamp INTEGER);`,
     `CREATE INDEX IF NOT EXISTS idx_history_domain ON visit_history(domain);`,
-    `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp);`
+    `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp)`,
   ];
   for (const s of stmts) {
-    console.log("start exec - ", s);
+    console.log('start exec - ', s);
     await exec(s);
-    console.log("end exec - ", s);
+    console.log('end exec - ', s);
   }
 }
 
@@ -175,7 +196,9 @@ function esc(v) {
 // helper: check if domain is in monitored_domains table
 async function isDomainMonitored(domain) {
   try {
-    const rows = await exec(`SELECT domain FROM monitored_domains WHERE domain='${esc(domain)}' LIMIT 1;`);
+    const rows = await exec(
+      `SELECT domain FROM monitored_domains WHERE domain='${esc(domain)}' LIMIT 1;`
+    );
     // rows is an array of blocks; check if any rows exist
     for (const b of rows || []) {
       if (Array.isArray(b.rows) && b.rows.length > 0) return true;
@@ -190,7 +213,7 @@ async function isDomainMonitored(domain) {
 // helper: try to get title from history for exact URL
 async function fetchTitleFromHistory(url) {
   try {
-    const items = await new Promise(r => chrome.history.search({ text: url, maxResults: 10 }, r));
+    const items = await new Promise((r) => chrome.history.search({ text: url, maxResults: 10 }, r));
     if (items && items.length > 0 && items[0].title) return items[0].title;
   } catch (e) {
     console.debug('fetchTitleFromHistory failure', e);
@@ -201,7 +224,7 @@ async function fetchTitleFromHistory(url) {
 // helper: try to get title from open tabs for exact URL
 async function getTabTitleForUrl(url) {
   try {
-    const tabs = await new Promise(r => chrome.tabs.query({ url }, r));
+    const tabs = await new Promise((r) => chrome.tabs.query({ url }, r));
     if (tabs && tabs.length > 0 && tabs[0].title) return tabs[0].title;
   } catch (e) {
     console.debug('getTabTitleForUrl failure', e);
@@ -216,7 +239,21 @@ async function migrateLocalStorageToSQLite() {
     await createSchema();
     console.log('end createSchema()');
 
-    const keys = await new Promise(r => chrome.storage.local.get(['privateBookmarks', 'privateFolders', 'passwordHash', 'monitoredDomains', 'visitHistory', 'privateNextId', 'privateFolderNextId', 'db_migrated_v1'], r));
+    const keys = await new Promise((r) =>
+      chrome.storage.local.get(
+        [
+          'privateBookmarks',
+          'privateFolders',
+          'passwordHash',
+          'monitoredDomains',
+          'visitHistory',
+          'privateNextId',
+          'privateFolderNextId',
+          'db_migrated_v1',
+        ],
+        r
+      )
+    );
     console.log('local keys - ', keys);
     if (keys.db_migrated_v1) {
       console.log('Migration flag found; skipping migration');
@@ -225,15 +262,21 @@ async function migrateLocalStorageToSQLite() {
 
     // Migrate settings/password and next ids
     if (keys.passwordHash) {
-      await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('passwordHash', '${esc(keys.passwordHash)}');`);
+      await exec(
+        `INSERT OR REPLACE INTO settings(k,v) VALUES('passwordHash', '${esc(keys.passwordHash)}');`
+      );
       console.log(keys.passwordHash);
     }
     if (keys.privateNextId !== undefined) {
-      await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('privateNextId', '${String(keys.privateNextId)}');`);
+      await exec(
+        `INSERT OR REPLACE INTO settings(k,v) VALUES('privateNextId', '${String(keys.privateNextId)}');`
+      );
       console.log(keys.privateNextId);
     }
     if (keys.privateFolderNextId !== undefined) {
-      await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('privateFolderNextId', '${String(keys.privateFolderNextId)}');`);
+      await exec(
+        `INSERT OR REPLACE INTO settings(k,v) VALUES('privateFolderNextId', '${String(keys.privateFolderNextId)}');`
+      );
       console.log(keys.privateFolderNextId);
     }
 
@@ -255,7 +298,9 @@ async function migrateLocalStorageToSQLite() {
       const url = esc(b.url || '');
       const folderId = esc(b.folderId || '1');
       const added = Number(b.added) || Date.now();
-      await exec(`INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`);
+      await exec(
+        `INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`
+      );
     }
 
     // monitored domains
@@ -269,12 +314,15 @@ async function migrateLocalStorageToSQLite() {
     const hist = Array.isArray(keys.visitHistory) ? keys.visitHistory : [];
     console.log(hist);
     for (const h of hist) {
-      const id = esc(h.id || (String(Date.now()) + Math.random().toString(36).slice(2, 8)));
+      const id =
+        esc(h.id || (String(Date.now()) + Math.random().toString(36).slice(2, 8)));
       const url = esc(h.url || '');
       const title = esc(h.title || '');
       const domain = esc(h.domain || '');
       const ts = Number(h.timestamp) || Date.now();
-      await exec(`INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`);
+      await exec(
+        `INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`
+      );
     }
 
     // set migrated flag in settings table so we won't re-run
@@ -284,4 +332,3 @@ async function migrateLocalStorageToSQLite() {
     console.error('Migration failed', e);
   }
 }
-

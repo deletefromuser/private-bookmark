@@ -3,7 +3,9 @@ async function sha256(text) {
   const enc = new TextEncoder();
   const data = enc.encode(text);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 // load chrome bookmark folders into select
@@ -13,8 +15,8 @@ async function loadBookmarks() {
   const listEl = document.getElementById('bookmarks-list');
   listEl.textContent = 'Loading...';
   // pagination params
-  const pageSize = window.__bm_page_size = window.__bm_page_size || 20;
-  const pageIndex = window.__bm_page_index = window.__bm_page_index || 0; // zero-based
+  const pageSize = (window.__bm_page_size = window.__bm_page_size || 20);
+  const pageIndex = (window.__bm_page_index = window.__bm_page_index || 0); // zero-based
   const offset = pageIndex * pageSize;
 
   // load folders and bookmarks page
@@ -23,17 +25,26 @@ async function loadBookmarks() {
   const total = await window.db.countBookmarks();
 
   listEl.innerHTML = '';
-  if (!nodes || nodes.length === 0) { listEl.textContent = 'No bookmarks'; updateBmPageInfo(pageIndex, pageSize, total); return; }
+  if (!nodes || nodes.length === 0) {
+    listEl.textContent = 'No bookmarks';
+    updateBmPageInfo(pageIndex, pageSize, total);
+    return;
+  }
 
   // group bookmarks by folderId for display
   const folderMap = {};
-  (folders || []).forEach(f => { folderMap[f.id] = f.name; });
+  (folders || []).forEach((f) => {
+    folderMap[f.id] = f.name;
+  });
   // render list (flat) with move/select and controls
-  nodes.forEach(n => {
+  nodes.forEach((n) => {
     const row = document.createElement('div');
     row.className = 'bm-row';
-    const folderSelectHtml = `<select data-id="${n.id}" class="move-select form-select mb-2">` +
-      (folders || []).map(f => `<option value="${f.id}" ${f.id === (n.folderId || '1') ? 'selected' : ''}>${f.name}</option>`).join('') +
+    const folderSelectHtml =
+      `<select data-id="${n.id}" class="move-select form-select mb-2">` +
+      (folders || [])
+        .map((f) => `<option value="${f.id}" ${f.id === (n.folderId || '1') ? 'selected' : ''}>${f.name}</option>`)
+        .join('') +
       `</select>`;
     const added = n.added ? new Date(Number(n.added)).toLocaleString() : '';
     const addedHtml = added ? `<span class="bm-added">${added}</span>` : '';
@@ -61,7 +72,11 @@ function updateBmPageInfo(pageIndex, pageSize, total) {
 
 // Refresh button handler - call loadBookmarks when clicked
 document.getElementById('refresh-bookmarks')?.addEventListener('click', () => {
-  try { loadBookmarks(); } catch (e) { console.warn('Refresh bookmarks failed', e); }
+  try {
+    loadBookmarks();
+  } catch (e) {
+    console.warn('Refresh bookmarks failed', e);
+  }
 });
 
 // folder and import/export UI moved to options page
@@ -109,7 +124,9 @@ document.getElementById('bookmarks-list').addEventListener('click', (e) => {
         if (newUrl) sql += `, url='${u}'`;
         sql += ` WHERE id='${String(id).replace(/'/g, "''")}';`;
         await window.db.run(sql);
-      } catch (err) { console.warn('Failed to update bookmark', err); }
+      } catch (err) {
+        console.warn('Failed to update bookmark', err);
+      }
       loadBookmarks();
     })();
   }
@@ -122,15 +139,22 @@ document.getElementById('bookmarks-list').addEventListener('change', (e) => {
   const newFolderId = e.target.value;
   (async () => {
     try {
-      await window.db.run(`UPDATE bookmarks SET folderId='${String(newFolderId).replace(/'/g, "''")} ' WHERE id='${String(id).replace(/'/g, "''")}';`);
-    } catch (err) { console.warn('Failed to move bookmark', err); }
+      await window.db.run(
+        `UPDATE bookmarks SET folderId='${String(newFolderId).replace(/'/g, "''")} ' WHERE id='${String(id).replace(/'/g, "''")}';`
+      );
+    } catch (err) {
+      console.warn('Failed to move bookmark', err);
+    }
     loadBookmarks();
   })();
 });
 
 // pagination handlers
 document.getElementById('bm-prev')?.addEventListener('click', () => {
-  window.__bm_page_index = Math.max(0, (window.__bm_page_index || 0) - 1);
+  window.__bm_page_index = Math.max(
+    0,
+    (window.__bm_page_index || 0) - 1
+  );
   loadBookmarks();
 });
 document.getElementById('bm-next')?.addEventListener('click', () => {
