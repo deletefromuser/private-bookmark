@@ -79,6 +79,22 @@ document.getElementById('refresh-bookmarks')?.addEventListener('click', () => {
   }
 });
 
+// Delete all bookmarks handler
+document.getElementById('delete-all-bookmarks')?.addEventListener('click', async () => {
+  const ok = await _modal.showConfirm(
+    'Delete ALL bookmarks? This cannot be undone.'
+  );
+  if (!ok) return;
+  try {
+    await window.db.run('DELETE FROM bookmarks;');
+    window.__bm_page_index = 0;
+    loadBookmarks();
+  } catch (e) {
+    console.warn('Failed to delete all bookmarks', e);
+    alert('Failed to delete bookmarks');
+  }
+});
+
 // folder and import/export UI moved to options page
 
 document.getElementById('unlock').addEventListener('click', async () => {
