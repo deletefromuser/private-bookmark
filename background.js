@@ -135,27 +135,61 @@ import SQLiteESMFactory from './wa-sqlite/dist/wa-sqlite-async.mjs';
 import * as SQLite from './wa-sqlite/src/sqlite-api.js';
 import { IDBBatchAtomicVFS as MyVFS } from './wa-sqlite/src/examples/IDBBatchAtomicVFS.js';
 
-async function exec(sql) {
-  // Initialize SQLite.
+let databasePromise = null;
+let queryQueue = Promise.resolve();
+
+async function openDatabase() {
   const module = await SQLiteESMFactory();
   const sqlite3 = SQLite.Factory(module);
-
-  // Register a custom file system.
   const vfs = await MyVFS.create('hello', module);
   // @ts-ignore
   sqlite3.vfs_register(vfs, true);
-
-  // Open the database.
   const db = await sqlite3.open_v2('test');
-  const results = [];
-  await sqlite3.exec(db, sql, (row, columns) => {
-    if (columns != results.at(-1)?.columns) {
-      results.push({ columns, rows: [] });
-    }
-    results.at(-1).rows.push(row);
-  });
-  return results;
+  return { sqlite3, db };
 }
+
+function getDatabase() {
+  if (!databasePromise) {
+    databasePromise = openDatabase().catch((err) => {
+      databasePromise = null;
+      throw err;
+    });
+  }
+  return databasePromise;
+}
+
+async function closeDatabase() {
+  if (!databasePromise) return;
+  const pending = databasePromise;
+  databasePromise = null;
+  try {
+    const { sqlite3, db } = await pending;
+    await sqlite3.close(db);
+  } catch (err) {
+    console.warn('Failed to close SQLite connection', err);
+  }
+}
+
+async function exec(sql) {
+  const run = async () => {
+    const { sqlite3, db } = await getDatabase();
+    const results = [];
+    await sqlite3.exec(db, sql, (row, columns) => {
+      if (columns != results.at(-1)?.columns) {
+        results.push({ columns, rows: [] });
+      }
+      results.at(-1).rows.push(row);
+    });
+    return results;
+  };
+  const next = queryQueue.then(run, run);
+  queryQueue = next.catch(() => {});
+  return next;
+}
+
+chrome.runtime.onSuspend?.addListener(() => {
+  closeDatabase();
+});
 
 // Create DB schema if not present
 async function createSchema() {
