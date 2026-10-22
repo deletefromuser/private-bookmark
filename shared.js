@@ -177,6 +177,28 @@
     return { ok: false, needsUpgrade: false };
   }
 
+  async function authenticate(
+    password,
+    {
+      allowWhenUnset = false,
+      missingPasswordMessage = 'No password set — set one in Options',
+    } = {}
+  ) {
+    const stored = await globalThis.db.getPasswordHash();
+    if (!stored) {
+      return allowWhenUnset
+        ? { ok: true }
+        : { ok: false, error: missingPasswordMessage };
+    }
+    if (!password) return { ok: false, error: 'Password required' };
+    const verification = await verifyPassword(password, stored);
+    if (!verification.ok) return { ok: false, error: 'Wrong password' };
+    if (verification.needsUpgrade) {
+      await globalThis.db.setPasswordHash(await hashPassword(password));
+    }
+    return { ok: true };
+  }
+
   global.AppUtils = {
     escapeHtml,
     safeUrl,
@@ -184,5 +206,6 @@
     sha256Hex,
     hashPassword,
     verifyPassword,
+    authenticate,
   };
 })(globalThis);

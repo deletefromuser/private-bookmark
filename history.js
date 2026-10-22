@@ -128,17 +128,8 @@ function showUnlockError(msg) {
 
 document.getElementById('unlock')?.addEventListener('click', async () => {
   const pw = document.getElementById('pw').value || '';
-  if (!pw) return showUnlockError('Password required');
-  const stored = await globalThis.db.getPasswordHash();
-  if (!stored) return showUnlockError('No password set — set one in Options');
-  const verification = await globalThis.AppUtils.verifyPassword(pw, stored);
-  if (!verification.ok) return showUnlockError('Wrong password');
-  if (verification.needsUpgrade) {
-    await globalThis.db.setPasswordHash(
-      await globalThis.AppUtils.hashPassword(pw)
-    );
-  }
-  // success
+  const result = await globalThis.AppUtils.authenticate(pw);
+  if (!result.ok) return showUnlockError(result.error);
   document.getElementById('auth').style.display = 'none';
   document.getElementById('content').style.display = 'block';
   loadHistory();

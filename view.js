@@ -110,22 +110,10 @@ document.getElementById('delete-all-bookmarks')?.addEventListener('click', async
 
 document.getElementById('unlock').addEventListener('click', async () => {
   const pw = document.getElementById('pw').value;
-  const stored = await globalThis.db.getPasswordHash();
-  if (!stored) {
-    // no password set -> allow
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-    loadBookmarks();
-    return;
-  }
-  if (!pw) return showUnlockError('Password required');
-  const verification = await globalThis.AppUtils.verifyPassword(pw, stored);
-  if (!verification.ok) return showUnlockError('Wrong password');
-  if (verification.needsUpgrade) {
-    await globalThis.db.setPasswordHash(
-      await globalThis.AppUtils.hashPassword(pw)
-    );
-  }
+  const result = await globalThis.AppUtils.authenticate(pw, {
+    allowWhenUnset: true,
+  });
+  if (!result.ok) return showUnlockError(result.error);
   document.getElementById('auth').style.display = 'none';
   document.getElementById('content').style.display = 'block';
   loadBookmarks();
