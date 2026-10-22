@@ -268,11 +268,11 @@ async function isMigrationComplete() {
 // Migrate from chrome.storage.local into SQLite tables. Runs once.
 async function migrateLocalStorageToSQLite() {
   try {
-    await createSchema();
-
     if (await isMigrationComplete()) {
       return;
     }
+
+    await createSchema();
 
     const keys = await new Promise((r) =>
       chrome.storage.local.get(
