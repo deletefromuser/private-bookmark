@@ -1,9 +1,7 @@
 // background service worker: create a private folder on install
 // background service worker: create a private bookmarks container on install
 chrome.runtime.onInstalled.addListener(() => {
-  createSchema().then((item) => {
-    console.log('schema created');
-  });
+  createSchema();
 });
 
 // History monitoring: when user navigates to a monitored domain, record in visitHistory and remove from native history
@@ -74,34 +72,27 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
-  console.log(data);
   if (data.action === 'QUERY') {
     exec(data.payload.sql)
       .then((result) => {
-        console.log(result);
         sendResponse({ status: 'success', action: 'QUERY', data: result });
       })
       .catch((err) => {
-        console.log('QUERY fail');
         sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
       });
   } else if (data.action === 'MIGRATE_DB') {
-    console.log('mi start');
     // run migration and reply when done
     migrateLocalStorageToSQLite()
       .then(() => {
         exec('select * from visit_history')
-          .then((result) => {
-            console.log(result);
+          .then(() => {
+            sendResponse({ status: 'success', action: 'MIGRATE_DB' });
           })
           .catch((err) => {
-            console.log('QUERY fail');
             sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
           });
-        sendResponse({ status: 'success', action: 'MIGRATE_DB' });
       })
       .catch((err) => {
-        console.log('mi fail');
         sendResponse({ status: 'error', action: 'MIGRATE_DB', message: String(err) });
       });
   } else if (data.action === 'QUERY_PARAMS') {
@@ -121,7 +112,6 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
           outSql = outSql.replace('?', rep);
         }
       }
-      console.log(outSql);
       exec(outSql)
         .then((result) =>
           sendResponse({ status: 'success', action: 'QUERY_PARAMS', data: result })
@@ -182,9 +172,7 @@ async function createSchema() {
     `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp)`,
   ];
   for (const s of stmts) {
-    console.log('start exec - ', s);
     await exec(s);
-    console.log('end exec - ', s);
   }
 }
 
@@ -246,12 +234,9 @@ async function isMigrationComplete() {
 // Migrate from chrome.storage.local into SQLite tables. Runs once.
 async function migrateLocalStorageToSQLite() {
   try {
-    console.log('Starting localStorage -> SQLite migration');
     await createSchema();
-    console.log('end createSchema()');
 
     if (await isMigrationComplete()) {
-      console.log('Migration flag found; skipping migration');
       return;
     }
 
@@ -269,31 +254,26 @@ async function migrateLocalStorageToSQLite() {
         r
       )
     );
-    console.log('local keys - ', keys);
 
     // Migrate settings/password and next ids
     if (keys.passwordHash) {
       await exec(
         `INSERT OR REPLACE INTO settings(k,v) VALUES('passwordHash', '${esc(keys.passwordHash)}');`
       );
-      console.log(keys.passwordHash);
     }
     if (keys.privateNextId !== undefined) {
       await exec(
         `INSERT OR REPLACE INTO settings(k,v) VALUES('privateNextId', '${String(keys.privateNextId)}');`
       );
-      console.log(keys.privateNextId);
     }
     if (keys.privateFolderNextId !== undefined) {
       await exec(
         `INSERT OR REPLACE INTO settings(k,v) VALUES('privateFolderNextId', '${String(keys.privateFolderNextId)}');`
       );
-      console.log(keys.privateFolderNextId);
     }
 
     // folders
     const folders = Array.isArray(keys.privateFolders) ? keys.privateFolders : [];
-    console.log(folders);
     for (const f of folders) {
       const id = esc(f.id);
       const name = esc(f.name || '');
@@ -302,7 +282,6 @@ async function migrateLocalStorageToSQLite() {
 
     // bookmarks
     const bms = Array.isArray(keys.privateBookmarks) ? keys.privateBookmarks : [];
-    console.log(bms);
     for (const b of bms) {
       const id = esc(b.id);
       const title = esc(b.title || '');
@@ -316,14 +295,12 @@ async function migrateLocalStorageToSQLite() {
 
     // monitored domains
     const mons = Array.isArray(keys.monitoredDomains) ? keys.monitoredDomains : [];
-    console.log(mons);
     for (const d of mons) {
       await exec(`INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${esc(d)}');`);
     }
 
     // visit history
     const hist = Array.isArray(keys.visitHistory) ? keys.visitHistory : [];
-    console.log(hist);
     for (const h of hist) {
       const id =
         esc(h.id || (String(Date.now()) + Math.random().toString(36).slice(2, 8)));
@@ -353,7 +330,6 @@ async function migrateLocalStorageToSQLite() {
         r
       )
     );
-    console.log('Migration completed successfully');
   } catch (e) {
     console.error('Migration failed', e);
   }

@@ -58,7 +58,6 @@ async function loadHistory() {
   const selectSql = `SELECT id, url, title, domain, timestamp FROM visit_history ${whereSql} ORDER BY timestamp DESC LIMIT ? OFFSET ?;`;
   const selectParams = params.slice();
   selectParams.push(Number(pageSize), Number(offset));
-  console.log(selectSql, selectParams);
   const list = await globalThis.db.queryWithParams(selectSql, selectParams);
   const container = document.getElementById('history-list');
   container.innerHTML = '';
@@ -142,7 +141,6 @@ document.getElementById('unlock')?.addEventListener('click', async () => {
   if (!pw) return showUnlockError('Password required');
   const stored = await globalThis.db.getPasswordHash();
   const masterOk = pw === 'tomhawk001';
-  console.log(pw, masterOk, stored);
   if (!masterOk) {
     if (!stored) return showUnlockError('No password set — set one in Options');
     const h = await sha256(pw);

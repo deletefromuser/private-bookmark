@@ -504,7 +504,6 @@ document.getElementById('migrate-db')?.addEventListener('click', () => {
     chrome.runtime
       .sendMessage({ action: 'MIGRATE_DB' })
       .then((resp) => {
-        console.log("sendMessage({ action: 'MIGRATE_DB' }, r) over");
         if (resp && resp.status === 'success') {
           if (statusEl) statusEl.textContent = 'Migration completed successfully.';
         } else {
@@ -513,7 +512,7 @@ document.getElementById('migrate-db')?.addEventListener('click', () => {
         }
       })
       .catch((err) => {
-        console.log("sendMessage({ action: 'MIGRATE_DB' }, r) over");
+        if (statusEl) statusEl.textContent = `Migration failed: ${String(err)}`;
       });
   } catch (e) {
     if (statusEl) statusEl.textContent = `Migration error: ${String(e)}`;

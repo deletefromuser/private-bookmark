@@ -17,7 +17,6 @@ const db = (function () {
               out.push(obj);
             }
           }
-          console.log(out);
           resolve(out);
         });
       } catch (e) {
@@ -65,7 +64,6 @@ const db = (function () {
     run,
     async getPasswordHash() {
       const result = await rawQuery(`SELECT v FROM settings WHERE k = 'passwordHash';`);
-      console.log('----', result);
       if (result && result.length > 0) {
         return result[0].v;
       } else {
