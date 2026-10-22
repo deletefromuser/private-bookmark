@@ -163,7 +163,7 @@ document.getElementById('bookmarks-list').addEventListener('change', (e) => {
   (async () => {
     try {
       await window.db.run(
-        `UPDATE bookmarks SET folderId='${String(newFolderId).replace(/'/g, "''")} ' WHERE id='${String(id).replace(/'/g, "''")}';`
+        `UPDATE bookmarks SET folderId='${String(newFolderId).replace(/'/g, "''")}' WHERE id='${String(id).replace(/'/g, "''")}';`
       );
     } catch (err) {
       console.warn('Failed to move bookmark', err);
