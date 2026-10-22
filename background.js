@@ -84,13 +84,7 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
     // run migration and reply when done
     migrateLocalStorageToSQLite()
       .then(() => {
-        exec('select * from visit_history')
-          .then(() => {
-            sendResponse({ status: 'success', action: 'MIGRATE_DB' });
-          })
-          .catch((err) => {
-            sendResponse({ status: 'error', action: 'QUERY', message: String(err) });
-          });
+        sendResponse({ status: 'success', action: 'MIGRATE_DB' });
       })
       .catch((err) => {
         sendResponse({ status: 'error', action: 'MIGRATE_DB', message: String(err) });
