@@ -1,12 +1,6 @@
 // SQL console script: runs SQL entered in the textarea and shows results
 let lastResults = null;
 
-function isDestructive(sql) {
-  if (!sql) return false;
-  const s = sql.trim().toUpperCase();
-  return /^(DELETE|UPDATE|INSERT|DROP|ALTER|REPLACE)\b/.test(s);
-}
-
 function renderResults(res, container) {
   container.innerHTML = '';
   if (!res || res.length === 0) {
@@ -52,9 +46,9 @@ async function runSql() {
     return;
   }
   try {
-    if (isDestructive(sql)) {
+    if (globalThis.AppUtils.isDestructiveSql(sql)) {
       const ok = await globalThis._modal.showConfirm(
-        'This statement looks destructive. Continue?'
+        'This SQL contains write or schema-changing statements. Continue?'
       );
       if (!ok) {
         if (status) status.textContent = 'Cancelled';
