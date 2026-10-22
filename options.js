@@ -16,19 +16,19 @@ document
       document.getElementById('status').textContent = 'Enter a password to set.';
       return;
     }
-    // require current password or master password
-    const current = await _modal.showTextPrompt(
-      'Enter current password to change it (or enter master password)',
-      ''
-    );
-    if (current == null) return; // cancelled
     const passwordHash = await globalThis.db.getPasswordHash();
-    const currentHash = await sha256(current);
-    const masterOk = current === 'tomhawk001';
-    if (!(masterOk || (passwordHash && currentHash === passwordHash))) {
-      document.getElementById('status').textContent =
-        'Current password incorrect. Change aborted.';
-      return;
+    if (passwordHash) {
+      const current = await _modal.showTextPrompt(
+        'Enter current password to change it',
+        ''
+      );
+      if (current == null) return; // cancelled
+      const currentHash = await sha256(current);
+      if (currentHash !== passwordHash) {
+        document.getElementById('status').textContent =
+          'Current password incorrect. Change aborted.';
+        return;
+      }
     }
     const hash = await sha256(newPw);
     await globalThis.db.setPasswordHash(hash);
@@ -43,18 +43,19 @@ document
       'Clear the password? This will allow anyone to open the View page without a password.'
     );
     if (!confirmed) return;
-    const current = await _modal.showTextPrompt(
-      'Enter current password to clear it (or enter master password)',
-      ''
-    );
-    if (current == null) return; // cancelled
     const passwordHash = await globalThis.db.getPasswordHash();
-    const currentHash = await sha256(current);
-    const masterOk = current === 'tomhawk001';
-    if (!(masterOk || (passwordHash && currentHash === passwordHash))) {
-      document.getElementById('status').textContent =
-        'Current password incorrect. Clear aborted.';
-      return;
+    if (passwordHash) {
+      const current = await _modal.showTextPrompt(
+        'Enter current password to clear it',
+        ''
+      );
+      if (current == null) return; // cancelled
+      const currentHash = await sha256(current);
+      if (currentHash !== passwordHash) {
+        document.getElementById('status').textContent =
+          'Current password incorrect. Clear aborted.';
+        return;
+      }
     }
     await globalThis.db.deletePasswordHash();
     document.getElementById('status').textContent = 'Password cleared.';

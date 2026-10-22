@@ -5,7 +5,7 @@
 - [x] **Fix migration flag mismatch.** `background.js:252-258` checks `db_migrated_v1` in `chrome.storage.local`, but `background.js:329` writes it to the SQLite `settings` table. Fresh installs never set the checked flag, so migration re-runs on every service-worker start; if legacy keys remain, they re-import and can overwrite newer bookmarks, password hash, monitored domains, and history. Read/write the flag in one place and delete legacy `chrome.storage.local` keys after success.
 - [x] **Remove secret logging.** Plaintext password at `history.js:145`; password hash at `db.js:68`; message payloads/query results at `background.js:77,81,268`, `db.js:20`, and `history.js:61`.
 - [x] **Fix stored XSS.** `view.js:43-54` injects bookmark title/URL via `innerHTML`; `options.js:89-91,333-336` does the same with folder names. Titles can originate from web pages or Chrome imports. Build DOM nodes with `textContent`, escape attributes, and reject non-`http(s)` URLs.
-- [ ] **Remove the `tomhawk001` master password** at `options.js:27,53` and `history.js:144`.
+- [x] **Remove the `tomhawk001` master password** at `options.js:27,53` and `history.js:144`.
 - [ ] **Make restore safe.** `options.js:196-276` deletes all tables without confirmation and without a transaction (`BEGIN`/`COMMIT` are commented out). Add confirmation, validate the imported structure/types, and restore in one transaction.
 - [ ] **Harden the SQL console.** `sql.js:4-8` only checks the first keyword, so `SELECT 1; DROP TABLE bookmarks;`, comments, and `WITH ... DELETE` bypass the warning. Detect every statement or add a read-only execution mode.
 - [ ] **Replace unsalted SHA-256 passwords** with salted PBKDF2 via WebCrypto; centralize hashing and migrate existing hashes.

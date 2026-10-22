@@ -140,12 +140,9 @@ document.getElementById('unlock')?.addEventListener('click', async () => {
   const pw = document.getElementById('pw').value || '';
   if (!pw) return showUnlockError('Password required');
   const stored = await globalThis.db.getPasswordHash();
-  const masterOk = pw === 'tomhawk001';
-  if (!masterOk) {
-    if (!stored) return showUnlockError('No password set — set one in Options');
-    const h = await sha256(pw);
-    if (h !== stored) return showUnlockError('Wrong password');
-  }
+  if (!stored) return showUnlockError('No password set — set one in Options');
+  const h = await sha256(pw);
+  if (h !== stored) return showUnlockError('Wrong password');
   // success
   document.getElementById('auth').style.display = 'none';
   document.getElementById('content').style.display = 'block';
