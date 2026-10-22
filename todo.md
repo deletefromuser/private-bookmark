@@ -25,7 +25,7 @@
 
 ## P2 — Maintainability, privacy & docs
 
-- [ ] **Vendor Bootstrap/Noto locally.** Every page currently loads CSS/fonts from jsDelivr/Google, leaking requests from a privacy-focused extension and breaking offline use.
+- [x] **Vendor Bootstrap/Noto locally.** Every page currently loads CSS/fonts from jsDelivr/Google, leaking requests from a privacy-focused extension and breaking offline use.
 - [ ] **Deduplicate shared logic.** `sha256` is copied in `popup.js`, `view.js`, `options.js`, and `history.js`; unlock/auth logic is duplicated in `view.js` and `history.js`.
 - [ ] **Remove unused code/deps.** `@vlcn.io/wa-sqlite` (`package.json:22`) and empty `lib/wa-sqlite/` are unused; actual code imports vendored root `wa-sqlite/`.
 - [ ] **Clean the build.** Replace the `*.js` Parcel entry glob with explicit entries and delete `build/` before building; stale hashed chunks accumulate. Commit `package-lock.json` instead of ignoring it (`.gitignore:5`).
