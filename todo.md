@@ -8,7 +8,7 @@
 - [x] **Remove the `tomhawk001` master password** at `options.js:27,53` and `history.js:144`.
 - [x] **Make restore safe.** `options.js:196-276` deletes all tables without confirmation and without a transaction (`BEGIN`/`COMMIT` are commented out). Add confirmation, validate the imported structure/types, and restore in one transaction.
 - [x] **Harden the SQL console.** `sql.js:4-8` only checks the first keyword, so `SELECT 1; DROP TABLE bookmarks;`, comments, and `WITH ... DELETE` bypass the warning. Detect every statement or add a read-only execution mode.
-- [ ] **Replace unsalted SHA-256 passwords** with salted PBKDF2 via WebCrypto; centralize hashing and migrate existing hashes.
+- [x] **Replace unsalted SHA-256 passwords** with salted PBKDF2 via WebCrypto; centralize hashing and migrate existing hashes.
 
 ## P1 — Correctness & performance
 

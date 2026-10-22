@@ -1,13 +1,3 @@
-async function sha256(text) {
-  if (!text) return '';
-  const enc = new TextEncoder();
-  const data = enc.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 async function loadHistory() {
   // pagination params
   const pageSize = (globalThis.__hist_page_size =
@@ -141,8 +131,13 @@ document.getElementById('unlock')?.addEventListener('click', async () => {
   if (!pw) return showUnlockError('Password required');
   const stored = await globalThis.db.getPasswordHash();
   if (!stored) return showUnlockError('No password set — set one in Options');
-  const h = await sha256(pw);
-  if (h !== stored) return showUnlockError('Wrong password');
+  const verification = await globalThis.AppUtils.verifyPassword(pw, stored);
+  if (!verification.ok) return showUnlockError('Wrong password');
+  if (verification.needsUpgrade) {
+    await globalThis.db.setPasswordHash(
+      await globalThis.AppUtils.hashPassword(pw)
+    );
+  }
   // success
   document.getElementById('auth').style.display = 'none';
   document.getElementById('content').style.display = 'block';

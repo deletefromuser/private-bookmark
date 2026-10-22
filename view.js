@@ -1,11 +1,8 @@
-async function sha256(text) {
-  if (!text) return '';
-  const enc = new TextEncoder();
-  const data = enc.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
+function showUnlockError(msg) {
+  const authMsg = document.getElementById('auth-msg');
+  if (!authMsg) return;
+  authMsg.textContent = msg;
+  authMsg.style.color = 'red';
 }
 
 // load chrome bookmark folders into select
@@ -113,13 +110,17 @@ document.getElementById('unlock').addEventListener('click', async () => {
     loadBookmarks();
     return;
   }
-  const hash = await sha256(pw);
   if (!pw) return showUnlockError('Password required');
-  if (hash === stored) {
-    document.getElementById('auth').style.display = 'none';
-    document.getElementById('content').style.display = 'block';
-    loadBookmarks();
-  } else alert('Wrong password');
+  const verification = await globalThis.AppUtils.verifyPassword(pw, stored);
+  if (!verification.ok) return showUnlockError('Wrong password');
+  if (verification.needsUpgrade) {
+    await globalThis.db.setPasswordHash(
+      await globalThis.AppUtils.hashPassword(pw)
+    );
+  }
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('content').style.display = 'block';
+  loadBookmarks();
 });
 
 // delegate edit/delete

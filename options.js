@@ -1,13 +1,3 @@
-async function sha256(text) {
-  if (!text) return '';
-  const enc = new TextEncoder();
-  const data = enc.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 document
   .getElementById('set-password')
   .addEventListener('click', async () => {
@@ -23,14 +13,17 @@ document
         ''
       );
       if (current == null) return; // cancelled
-      const currentHash = await sha256(current);
-      if (currentHash !== passwordHash) {
+      const verification = await globalThis.AppUtils.verifyPassword(
+        current,
+        passwordHash
+      );
+      if (!verification.ok) {
         document.getElementById('status').textContent =
           'Current password incorrect. Change aborted.';
         return;
       }
     }
-    const hash = await sha256(newPw);
+    const hash = await globalThis.AppUtils.hashPassword(newPw);
     await globalThis.db.setPasswordHash(hash);
     document.getElementById('new-password').value = '';
     document.getElementById('status').textContent = 'Password changed.';
@@ -50,8 +43,11 @@ document
         ''
       );
       if (current == null) return; // cancelled
-      const currentHash = await sha256(current);
-      if (currentHash !== passwordHash) {
+      const verification = await globalThis.AppUtils.verifyPassword(
+        current,
+        passwordHash
+      );
+      if (!verification.ok) {
         document.getElementById('status').textContent =
           'Current password incorrect. Clear aborted.';
         return;

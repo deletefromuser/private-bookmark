@@ -82,5 +82,107 @@
     return statements.some((statement) => dangerous.test(statement));
   }
 
-  global.AppUtils = { escapeHtml, safeUrl, isDestructiveSql };
+  const PBKDF2_ITERATIONS = 210000;
+  const PBKDF2_SALT_BYTES = 16;
+  const PBKDF2_KEY_BITS = 256;
+
+  function bytesToHex(bytes) {
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  function hexToBytes(hex) {
+    if (hex.length % 2 !== 0) return null;
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+      const value = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+      if (Number.isNaN(value)) return null;
+      bytes[i] = value;
+    }
+    return bytes;
+  }
+
+  function timingSafeEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+    return diff === 0;
+  }
+
+  async function sha256Hex(text) {
+    const data = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return bytesToHex(new Uint8Array(digest));
+  }
+
+  async function derivePasswordBits(password, salt, iterations) {
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(password),
+      'PBKDF2',
+      false,
+      ['deriveBits']
+    );
+    const bits = await crypto.subtle.deriveBits(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations,
+        hash: 'SHA-256',
+      },
+      key,
+      PBKDF2_KEY_BITS
+    );
+    return new Uint8Array(bits);
+  }
+
+  async function hashPassword(password) {
+    const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_BYTES));
+    const hash = await derivePasswordBits(
+      password,
+      salt,
+      PBKDF2_ITERATIONS
+    );
+    return `pbkdf2$${PBKDF2_ITERATIONS}$${bytesToHex(salt)}$${bytesToHex(hash)}`;
+  }
+
+  async function verifyPassword(password, stored) {
+    if (!stored || typeof stored !== 'string') {
+      return { ok: false, needsUpgrade: false };
+    }
+    if (stored.startsWith('pbkdf2$')) {
+      const parts = stored.split('$');
+      if (parts.length !== 4) return { ok: false, needsUpgrade: false };
+      const iterations = Number(parts[1]);
+      const salt = hexToBytes(parts[2]);
+      const expected = hexToBytes(parts[3]);
+      if (!Number.isInteger(iterations) || iterations <= 0 || !salt || !expected) {
+        return { ok: false, needsUpgrade: false };
+      }
+      const actual = await derivePasswordBits(password, salt, iterations);
+      return {
+        ok: timingSafeEqual(actual, expected),
+        needsUpgrade: iterations < PBKDF2_ITERATIONS,
+      };
+    }
+    if (/^[0-9a-f]{64}$/i.test(stored)) {
+      const actual = hexToBytes(await sha256Hex(password));
+      const expected = hexToBytes(stored);
+      return {
+        ok: timingSafeEqual(actual, expected),
+        needsUpgrade: true,
+      };
+    }
+    return { ok: false, needsUpgrade: false };
+  }
+
+  global.AppUtils = {
+    escapeHtml,
+    safeUrl,
+    isDestructiveSql,
+    sha256Hex,
+    hashPassword,
+    verifyPassword,
+  };
 })(globalThis);

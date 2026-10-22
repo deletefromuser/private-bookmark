@@ -1,13 +1,3 @@
-async function sha256(text) {
-  if (!text) return '';
-  const enc = new TextEncoder();
-  const data = enc.encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
   if (globalThis.AppUtils.safeUrl(url) === '#') {
