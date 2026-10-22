@@ -1,23 +1,31 @@
 // Lightweight DB helper using background QUERY message (wa-sqlite executed in background)
 const db = (function () {
-  async function rawQuery(sql) {
+  function flattenBlocks(data) {
+    const out = [];
+    for (const block of data || []) {
+      const cols = block.columns || [];
+      for (const row of block.rows || []) {
+        const obj = {};
+        for (let i = 0; i < cols.length; i++) obj[cols[i]] = row[i];
+        out.push(obj);
+      }
+    }
+    return out;
+  }
+
+  function sendDbMessage(message) {
     return new Promise((resolve, reject) => {
       try {
-        chrome.runtime.sendMessage({ action: 'QUERY', payload: { sql } }, (resp) => {
-          if (!resp) return reject(new Error('No response from background'));
-          if (resp.status !== 'success')
-            return reject(new Error(resp.message || 'Query failed'));
-          // resp.data is an array of result blocks { columns, rows }
-          const out = [];
-          for (const block of resp.data || []) {
-            const cols = block.columns || [];
-            for (const r of block.rows || []) {
-              const obj = {};
-              for (let i = 0; i < cols.length; i++) obj[cols[i]] = r[i];
-              out.push(obj);
-            }
+        chrome.runtime.sendMessage(message, (resp) => {
+          const runtimeError = chrome.runtime.lastError;
+          if (runtimeError) {
+            return reject(new Error(runtimeError.message));
           }
-          resolve(out);
+          if (!resp) return reject(new Error('No response from background'));
+          if (resp.status !== 'success') {
+            return reject(new Error(resp.message || 'Query failed'));
+          }
+          resolve(resp.data);
         });
       } catch (e) {
         reject(e);
@@ -25,31 +33,17 @@ const db = (function () {
     });
   }
 
+  async function rawQuery(sql) {
+    const data = await sendDbMessage({ action: 'QUERY', payload: { sql } });
+    return flattenBlocks(data);
+  }
+
   async function rawQueryWithParams(sql, params) {
-    return new Promise((resolve, reject) => {
-      try {
-        chrome.runtime.sendMessage(
-          { action: 'QUERY_PARAMS', payload: { sql, params } },
-          (resp) => {
-            if (!resp) return reject(new Error('No response from background'));
-            if (resp.status !== 'success')
-              return reject(new Error(resp.message || 'Query failed'));
-            const out = [];
-            for (const block of resp.data || []) {
-              const cols = block.columns || [];
-              for (const r of block.rows || []) {
-                const obj = {};
-                for (let i = 0; i < cols.length; i++) obj[cols[i]] = r[i];
-                out.push(obj);
-              }
-            }
-            resolve(out);
-          }
-        );
-      } catch (e) {
-        reject(e);
-      }
+    const data = await sendDbMessage({
+      action: 'QUERY_PARAMS',
+      payload: { sql, params },
     });
+    return flattenBlocks(data);
   }
 
   async function run(sql) {
