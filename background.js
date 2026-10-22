@@ -97,31 +97,13 @@ chrome.runtime.onMessage.addListener((data, sender, sendResponse) => {
       });
   } else if (data.action === 'QUERY_PARAMS') {
     const { sql, params } = data.payload || {};
-    try {
-      // simple param replacement: replace ? placeholders in order
-      let outSql = sql;
-      if (Array.isArray(params) && params.length > 0) {
-        for (const p of params) {
-          let rep;
-          if (p === null || p === undefined) rep = "''";
-          else if (typeof p === 'number') rep = String(p);
-          else {
-            const s = String(p).replaceAll("'", "''");
-            rep = `'${s}'`;
-          }
-          outSql = outSql.replace('?', rep);
-        }
-      }
-      exec(outSql)
-        .then((result) =>
-          sendResponse({ status: 'success', action: 'QUERY_PARAMS', data: result })
-        )
-        .catch((err) =>
-          sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(err) })
-        );
-    } catch (e) {
-      sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(e) });
-    }
+    execParams(sql, params)
+      .then((result) =>
+        sendResponse({ status: 'success', action: 'QUERY_PARAMS', data: result })
+      )
+      .catch((err) =>
+        sendResponse({ status: 'error', action: 'QUERY_PARAMS', message: String(err) })
+      );
     return true;
   } else {
     sendResponse({ status: 'error', action: 'unknown action' });
@@ -170,8 +152,14 @@ async function closeDatabase() {
   }
 }
 
-async function exec(sql) {
-  const run = async () => {
+function enqueue(operation) {
+  const next = queryQueue.then(operation, operation);
+  queryQueue = next.catch(() => {});
+  return next;
+}
+
+function exec(sql) {
+  return enqueue(async () => {
     const { sqlite3, db } = await getDatabase();
     const results = [];
     await sqlite3.exec(db, sql, (row, columns) => {
@@ -181,10 +169,34 @@ async function exec(sql) {
       results.at(-1).rows.push(row);
     });
     return results;
-  };
-  const next = queryQueue.then(run, run);
-  queryQueue = next.catch(() => {});
-  return next;
+  });
+}
+
+function execParams(sql, params) {
+  return enqueue(async () => {
+    const { sqlite3, db } = await getDatabase();
+    const results = [];
+    const bindings = Array.isArray(params) ? params : [];
+    for await (const stmt of sqlite3.statements(db, sql)) {
+      const expected = sqlite3.bind_parameter_count(stmt);
+      if (expected !== bindings.length) {
+        throw new Error(
+          `Expected ${expected} SQL parameters but received ${bindings.length}`
+        );
+      }
+      if (bindings.length > 0) {
+        sqlite3.bind_collection(stmt, bindings);
+      }
+      let columns = null;
+      const rows = [];
+      while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+        if (!columns) columns = sqlite3.column_names(stmt);
+        rows.push(sqlite3.row(stmt));
+      }
+      if (columns) results.push({ columns, rows });
+    }
+    return results;
+  });
 }
 
 chrome.runtime.onSuspend?.addListener(() => {
