@@ -94,56 +94,50 @@ document.getElementById('open-options')?.addEventListener('click', () => {
 
 // bookmark list UI removed from popup; edit/delete handled in view.html
 
-document
-  .getElementById('add-bookmark')
-  .addEventListener('click', () => {
-    const title = document.getElementById('title').value;
-    const url = document.getElementById('url').value;
-    if (!url) return alert('URL required');
-    const addBtn = document.getElementById('add-bookmark');
-    const addCurrentBtn = document.getElementById('add-current');
-    addBtn.disabled = true;
-    addCurrentBtn.disabled = true;
-    const folderId = document.getElementById('folder-select')?.value;
-    addBookmark(title, url, folderId)
-      .then(() => showStatus('Bookmark added'))
-      .catch((err) => console.warn('Add failed', err))
-      .finally(() => {
-        addBtn.disabled = false;
-        addCurrentBtn.disabled = false;
-        updateCurrentTabState();
-      });
-    document.getElementById('title').value = '';
-    document.getElementById('url').value = '';
-  });
+document.getElementById('add-bookmark').addEventListener('click', () => {
+  const title = document.getElementById('title').value;
+  const url = document.getElementById('url').value;
+  if (!url) return alert('URL required');
+  const addBtn = document.getElementById('add-bookmark');
+  const addCurrentBtn = document.getElementById('add-current');
+  addBtn.disabled = true;
+  addCurrentBtn.disabled = true;
+  const folderId = document.getElementById('folder-select')?.value;
+  addBookmark(title, url, folderId)
+    .then(() => showStatus('Bookmark added'))
+    .catch((err) => console.warn('Add failed', err))
+    .finally(() => {
+      addBtn.disabled = false;
+      addCurrentBtn.disabled = false;
+      updateCurrentTabState();
+    });
+  document.getElementById('title').value = '';
+  document.getElementById('url').value = '';
+});
 
 document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
-document
-  .getElementById('add-current-domain')
-  ?.addEventListener('click', async () => {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || !tab.url) return showStatus('No active tab URL');
-    const url = new URL(tab.url);
-    const domain = url.hostname.replace(/^www\./, '');
-    const list = await globalThis.db.getMonitoredDomains();
-    if (list.includes(domain)) {
-      showStatus('Domain is already monitored');
-    } else {
-      await globalThis.db.addMonitoredDomain(domain);
-      showStatus('Domain added to monitored list');
-    }
-  });
+document.getElementById('add-current-domain')?.addEventListener('click', async () => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab || !tab.url) return showStatus('No active tab URL');
+  const url = new URL(tab.url);
+  const domain = url.hostname.replace(/^www\./, '');
+  const list = await globalThis.db.getMonitoredDomains();
+  if (list.includes(domain)) {
+    showStatus('Domain is already monitored');
+  } else {
+    await globalThis.db.addMonitoredDomain(domain);
+    showStatus('Domain added to monitored list');
+  }
+});
 
 document.getElementById('open-view').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
 });
 
-document
-  .getElementById('open-history-viewer')
-  ?.addEventListener('click', async () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
-  });
+document.getElementById('open-history-viewer')?.addEventListener('click', async () => {
+  chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+});
 
 // initial: popup only provides add/current/options/view functionality
 

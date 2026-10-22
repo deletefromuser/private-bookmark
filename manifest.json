@@ -8,13 +8,7 @@
     "48": "icons/logo_v1.png",
     "96": "icons/logo_v1.png"
   },
-  "permissions": [
-    "storage",
-    "tabs",
-    "bookmarks",
-    "history",
-    "webNavigation"
-  ],
+  "permissions": ["storage", "tabs", "bookmarks", "history", "webNavigation"],
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },

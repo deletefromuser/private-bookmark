@@ -1,61 +1,48 @@
-document
-  .getElementById('set-password')
-  .addEventListener('click', async () => {
-    const newPw = document.getElementById('new-password').value;
-    if (!newPw) {
-      document.getElementById('status').textContent = 'Enter a password to set.';
+document.getElementById('set-password').addEventListener('click', async () => {
+  const newPw = document.getElementById('new-password').value;
+  if (!newPw) {
+    document.getElementById('status').textContent = 'Enter a password to set.';
+    return;
+  }
+  const passwordHash = await globalThis.db.getPasswordHash();
+  if (passwordHash) {
+    const current = await _modal.showTextPrompt(
+      'Enter current password to change it',
+      ''
+    );
+    if (current == null) return; // cancelled
+    const verification = await globalThis.AppUtils.verifyPassword(current, passwordHash);
+    if (!verification.ok) {
+      document.getElementById('status').textContent =
+        'Current password incorrect. Change aborted.';
       return;
     }
-    const passwordHash = await globalThis.db.getPasswordHash();
-    if (passwordHash) {
-      const current = await _modal.showTextPrompt(
-        'Enter current password to change it',
-        ''
-      );
-      if (current == null) return; // cancelled
-      const verification = await globalThis.AppUtils.verifyPassword(
-        current,
-        passwordHash
-      );
-      if (!verification.ok) {
-        document.getElementById('status').textContent =
-          'Current password incorrect. Change aborted.';
-        return;
-      }
-    }
-    const hash = await globalThis.AppUtils.hashPassword(newPw);
-    await globalThis.db.setPasswordHash(hash);
-    document.getElementById('new-password').value = '';
-    document.getElementById('status').textContent = 'Password changed.';
-  });
+  }
+  const hash = await globalThis.AppUtils.hashPassword(newPw);
+  await globalThis.db.setPasswordHash(hash);
+  document.getElementById('new-password').value = '';
+  document.getElementById('status').textContent = 'Password changed.';
+});
 
-document
-  .getElementById('clear-password')
-  .addEventListener('click', async () => {
-    const confirmed = await _modal.showConfirm(
-      'Clear the password? This will allow anyone to open the View page without a password.'
-    );
-    if (!confirmed) return;
-    const passwordHash = await globalThis.db.getPasswordHash();
-    if (passwordHash) {
-      const current = await _modal.showTextPrompt(
-        'Enter current password to clear it',
-        ''
-      );
-      if (current == null) return; // cancelled
-      const verification = await globalThis.AppUtils.verifyPassword(
-        current,
-        passwordHash
-      );
-      if (!verification.ok) {
-        document.getElementById('status').textContent =
-          'Current password incorrect. Clear aborted.';
-        return;
-      }
+document.getElementById('clear-password').addEventListener('click', async () => {
+  const confirmed = await _modal.showConfirm(
+    'Clear the password? This will allow anyone to open the View page without a password.'
+  );
+  if (!confirmed) return;
+  const passwordHash = await globalThis.db.getPasswordHash();
+  if (passwordHash) {
+    const current = await _modal.showTextPrompt('Enter current password to clear it', '');
+    if (current == null) return; // cancelled
+    const verification = await globalThis.AppUtils.verifyPassword(current, passwordHash);
+    if (!verification.ok) {
+      document.getElementById('status').textContent =
+        'Current password incorrect. Clear aborted.';
+      return;
     }
-    await globalThis.db.deletePasswordHash();
-    document.getElementById('status').textContent = 'Password cleared.';
-  });
+  }
+  await globalThis.db.deletePasswordHash();
+  document.getElementById('status').textContent = 'Password cleared.';
+});
 
 // Initialize status
 // Initialize status
@@ -104,9 +91,7 @@ async function loadMonitoredDomainsUI() {
     del.className = 'btn-close btn-close-black ms-2';
     del.style.opacity = '0.8';
     del.addEventListener('click', async () => {
-      const ok = await globalThis._modal.showConfirm(
-        `Remove monitored domain "${d}"?`
-      );
+      const ok = await globalThis._modal.showConfirm(`Remove monitored domain "${d}"?`);
       if (!ok) return;
       const dEsc = d.replaceAll("'", "''");
       await db.run(`DELETE FROM monitored_domains WHERE domain='${dEsc}';`);
@@ -119,19 +104,17 @@ async function loadMonitoredDomainsUI() {
   }
 }
 
-document
-  .getElementById('add-monitored-domain')
-  ?.addEventListener('click', async () => {
-    const input = document.getElementById('new-monitored-domain');
-    const domain = input.value.trim();
-    if (!domain) return;
-    const list = await db.getMonitoredDomains();
-    if (!list.includes(domain)) {
-      await db.addMonitoredDomain(domain);
-      input.value = '';
-      loadMonitoredDomainsUI();
-    }
-  });
+document.getElementById('add-monitored-domain')?.addEventListener('click', async () => {
+  const input = document.getElementById('new-monitored-domain');
+  const domain = input.value.trim();
+  if (!domain) return;
+  const list = await db.getMonitoredDomains();
+  if (!list.includes(domain)) {
+    await db.addMonitoredDomain(domain);
+    input.value = '';
+    loadMonitoredDomainsUI();
+  }
+});
 
 document
   .getElementById('clear-monitored-domains')
@@ -248,9 +231,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
     ];
     try {
       for (const s of obj.settings) {
-        statements.push(
-          `INSERT INTO settings(k,v) VALUES('${esc(s.k)}','${esc(s.v)}');`
-        );
+        statements.push(`INSERT INTO settings(k,v) VALUES('${esc(s.k)}','${esc(s.v)}');`);
       }
       for (const f of obj.folders) {
         statements.push(
@@ -305,33 +286,29 @@ document.getElementById('open-sql-console')?.addEventListener('click', () => {
 
 // Open visit history viewer moved to popup
 
-document
-  .getElementById('clear-visit-history')
-  ?.addEventListener('click', async () => {
-    const ok = await globalThis._modal.showConfirm(
-      'Clear private visit history? This cannot be undone.'
-    );
-    if (!ok) return;
-    await db.run('DELETE FROM visit_history;');
-  });
+document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
+  const ok = await globalThis._modal.showConfirm(
+    'Clear private visit history? This cannot be undone.'
+  );
+  if (!ok) return;
+  await db.run('DELETE FROM visit_history;');
+});
 
-document
-  .getElementById('export-visit-history')
-  ?.addEventListener('click', async () => {
-    const total = await db.countVisitHistory();
-    const data = total ? await db.getVisitHistoryPage(total, 0) : [];
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'visit-history.json';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+document.getElementById('export-visit-history')?.addEventListener('click', async () => {
+  const total = await db.countVisitHistory();
+  const data = total ? await db.getVisitHistoryPage(total, 0) : [];
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: 'application/json',
   });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'visit-history.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
 
 // inline delete prompt similar to view.js
 async function showDeleteFolderPrompt(folderId) {
@@ -343,8 +320,7 @@ async function showDeleteFolderPrompt(folderId) {
   const promptDiv = document.createElement('div');
   promptDiv.className = 'folder-delete-prompt';
   const otherFolders = folders.filter((f) => f.id !== folderId);
-  let moveSelectHtml =
-    '<select id="delete-move-target" class="form-select mb-2">';
+  let moveSelectHtml = '<select id="delete-move-target" class="form-select mb-2">';
   for (const f of otherFolders) {
     moveSelectHtml += `<option value="${escapeHtml(f.id)}">${escapeHtml(f.name)}</option>`;
   }
@@ -363,32 +339,28 @@ async function showDeleteFolderPrompt(folderId) {
     }
   }
   if (!replaced) el.appendChild(promptDiv);
-  document
-    .getElementById('del-cancel')
-    .addEventListener('click', () => {
-      promptDiv.remove();
-      loadFoldersUI();
-    });
-  document
-    .getElementById('del-confirm')
-    .addEventListener('click', async () => {
-      const action = promptDiv.querySelector('input[name="del-action"]:checked').value;
-      if (action === 'delete') {
-        const fid = String(folderId).replaceAll("'", "''");
-        await db.run(`DELETE FROM bookmarks WHERE folderId='${fid}';`);
-        await db.run(`DELETE FROM folders WHERE id='${fid}';`);
-      } else {
-        const sel = document.getElementById('delete-move-target');
-        if (!sel || !sel.value) return alert('No target folder selected');
-        const targetId = sel.value;
-        const fid = String(folderId).replaceAll("'", "''");
-        const tid = String(targetId).replaceAll("'", "''");
-        await db.run(`UPDATE bookmarks SET folderId='${tid}' WHERE folderId='${fid}';`);
-        await db.run(`DELETE FROM folders WHERE id='${fid}';`);
-      }
-      promptDiv.remove();
-      loadFoldersUI();
-    });
+  document.getElementById('del-cancel').addEventListener('click', () => {
+    promptDiv.remove();
+    loadFoldersUI();
+  });
+  document.getElementById('del-confirm').addEventListener('click', async () => {
+    const action = promptDiv.querySelector('input[name="del-action"]:checked').value;
+    if (action === 'delete') {
+      const fid = String(folderId).replaceAll("'", "''");
+      await db.run(`DELETE FROM bookmarks WHERE folderId='${fid}';`);
+      await db.run(`DELETE FROM folders WHERE id='${fid}';`);
+    } else {
+      const sel = document.getElementById('delete-move-target');
+      if (!sel || !sel.value) return alert('No target folder selected');
+      const targetId = sel.value;
+      const fid = String(folderId).replaceAll("'", "''");
+      const tid = String(targetId).replaceAll("'", "''");
+      await db.run(`UPDATE bookmarks SET folderId='${tid}' WHERE folderId='${fid}';`);
+      await db.run(`DELETE FROM folders WHERE id='${fid}';`);
+    }
+    promptDiv.remove();
+    loadFoldersUI();
+  });
 }
 
 // create folder
@@ -484,7 +456,8 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
         added: b.dateAdded ? Number(b.dateAdded) : Date.now(),
       }))
     );
-    if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
+    if (statusEl)
+      statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
     await loadFoldersUI();
     await loadChromeFoldersIntoSelect();
   });

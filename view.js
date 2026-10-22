@@ -91,9 +91,7 @@ document.getElementById('refresh-bookmarks')?.addEventListener('click', () => {
 
 // Delete all bookmarks handler
 document.getElementById('delete-all-bookmarks')?.addEventListener('click', async () => {
-  const ok = await _modal.showConfirm(
-    'Delete ALL bookmarks? This cannot be undone.'
-  );
+  const ok = await _modal.showConfirm('Delete ALL bookmarks? This cannot be undone.');
   if (!ok) return;
   try {
     await window.db.run('DELETE FROM bookmarks;');
@@ -169,10 +167,7 @@ document.getElementById('bookmarks-list').addEventListener('change', (e) => {
 
 // pagination handlers
 document.getElementById('bm-prev')?.addEventListener('click', () => {
-  window.__bm_page_index = Math.max(
-    0,
-    (window.__bm_page_index || 0) - 1
-  );
+  window.__bm_page_index = Math.max(0, (window.__bm_page_index || 0) - 1);
   loadBookmarks();
 });
 document.getElementById('bm-next')?.addEventListener('click', () => {

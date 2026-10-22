@@ -264,7 +264,9 @@ async function isDomainMonitored(domain) {
 // helper: try to get title from history for exact URL
 async function fetchTitleFromHistory(url) {
   try {
-    const items = await new Promise((r) => chrome.history.search({ text: url, maxResults: 10 }, r));
+    const items = await new Promise((r) =>
+      chrome.history.search({ text: url, maxResults: 10 }, r)
+    );
     if (items && items.length > 0 && items[0].title) return items[0].title;
   } catch (e) {
     console.debug('fetchTitleFromHistory failure', e);
@@ -285,9 +287,7 @@ async function getTabTitleForUrl(url) {
 
 async function isMigrationComplete() {
   try {
-    const rows = await exec(
-      `SELECT v FROM settings WHERE k = 'db_migrated_v1' LIMIT 1;`
-    );
+    const rows = await exec(`SELECT v FROM settings WHERE k = 'db_migrated_v1' LIMIT 1;`);
     return (rows || []).some((b) => Array.isArray(b.rows) && b.rows.length > 0);
   } catch (e) {
     return false;

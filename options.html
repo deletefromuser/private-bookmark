@@ -1,82 +1,126 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Private Bookmark - Options</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="shared.js"></script>
+    <script src="modal.js"></script>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Private Bookmark - Options</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="shared.js"></script>
-  <script src="modal.js"></script>
-</head>
-
-<body class="option-page">
-  <h1>Options</h1>
-  <section>
-    <h2>Password</h2>
-    <p>Set or clear the password used to unlock the View page.</p>
-    <input id="new-password" type="password" placeholder="New password (leave blank to keep)" class="form-control mb-2">
-    <button id="set-password" class="btn btn-primary me-2">Set Password</button>
-    <button id="clear-password" class="btn btn-outline-secondary">Clear Password</button>
-    <div id="status" aria-live="polite"></div>
-  </section>
-  <section>
-    <h2>Folders</h2>
-    <div id="folders-list">Loading...</div>
-    <input id="new-folder-name" placeholder="New folder name" class="form-control mb-2">
-    <button id="create-folder" class="btn btn-sm btn-success">Create Folder</button>
-  </section>
-  <section>
-    <h2>Import / Export</h2>
-    <p>Select a Chrome bookmark folder to import into a new private folder:</p>
-    <select id="chrome-folders-select" class="form-select mb-2"></select>
-    <button id="import-chrome" class="btn btn-sm btn-primary mb-2">Import Selected Chrome Folder</button>
-    <p>Export private bookmarks to HTML:</p>
-    <button id="export-html" class="btn btn-sm btn-outline-primary">Export as HTML</button>
-    <div id="import-status" aria-live="polite"></div>
-  </section>
-  <section>
-    <h2>Backup / Restore</h2>
-    <p>Export the entire SQLite database to a JSON file, or restore from a previously exported file.</p>
-    <div class="mb-2">
-      <button id="export-db" class="btn btn-sm btn-outline-secondary">Export Database (JSON)</button>
-      <input id="import-db-file" type="file" accept="application/json" class="form-control-file d-inline-block ms-2"
-        style="width:auto;" />
-      <button id="import-db" class="btn btn-sm btn-outline-danger ms-2">Restore Database</button>
-  <button id="open-sql-console" class="btn btn-sm btn-outline-dark ms-2">Open SQL Console</button>
-    </div>
-    <div id="backup-status" aria-live="polite"></div>
-  </section>
-  <section>
-    <h3>History Monitoring</h3>
-    <div class="mb-3">
-      <p>Monitored domains: visits to these domains will be recorded to the extension's private history and removed from
-        the browser's native history.</p>
-      <div id="monitored-domains-list" class="mb-2"></div>
-      <div class="input-group mb-2">
-        <input id="new-monitored-domain" class="form-control" placeholder="example.com" />
-        <button id="add-monitored-domain" class="btn btn-outline-primary">Add Domain</button>
+  <body class="option-page">
+    <h1>Options</h1>
+    <section>
+      <h2>Password</h2>
+      <p>Set or clear the password used to unlock the View page.</p>
+      <input
+        id="new-password"
+        type="password"
+        placeholder="New password (leave blank to keep)"
+        class="form-control mb-2"
+      />
+      <button id="set-password" class="btn btn-primary me-2">Set Password</button>
+      <button id="clear-password" class="btn btn-outline-secondary">
+        Clear Password
+      </button>
+      <div id="status" aria-live="polite"></div>
+    </section>
+    <section>
+      <h2>Folders</h2>
+      <div id="folders-list">Loading...</div>
+      <input
+        id="new-folder-name"
+        placeholder="New folder name"
+        class="form-control mb-2"
+      />
+      <button id="create-folder" class="btn btn-sm btn-success">Create Folder</button>
+    </section>
+    <section>
+      <h2>Import / Export</h2>
+      <p>Select a Chrome bookmark folder to import into a new private folder:</p>
+      <select id="chrome-folders-select" class="form-select mb-2"></select>
+      <button id="import-chrome" class="btn btn-sm btn-primary mb-2">
+        Import Selected Chrome Folder
+      </button>
+      <p>Export private bookmarks to HTML:</p>
+      <button id="export-html" class="btn btn-sm btn-outline-primary">
+        Export as HTML
+      </button>
+      <div id="import-status" aria-live="polite"></div>
+    </section>
+    <section>
+      <h2>Backup / Restore</h2>
+      <p>
+        Export the entire SQLite database to a JSON file, or restore from a previously
+        exported file.
+      </p>
+      <div class="mb-2">
+        <button id="export-db" class="btn btn-sm btn-outline-secondary">
+          Export Database (JSON)
+        </button>
+        <input
+          id="import-db-file"
+          type="file"
+          accept="application/json"
+          class="form-control-file d-inline-block ms-2"
+          style="width: auto"
+        />
+        <button id="import-db" class="btn btn-sm btn-outline-danger ms-2">
+          Restore Database
+        </button>
+        <button id="open-sql-console" class="btn btn-sm btn-outline-dark ms-2">
+          Open SQL Console
+        </button>
       </div>
-      <button id="clear-monitored-domains" class="btn btn-outline-danger">Clear All Monitored Domains</button>
-    </div>
-  </section>
+      <div id="backup-status" aria-live="polite"></div>
+    </section>
+    <section>
+      <h3>History Monitoring</h3>
+      <div class="mb-3">
+        <p>
+          Monitored domains: visits to these domains will be recorded to the extension's
+          private history and removed from the browser's native history.
+        </p>
+        <div id="monitored-domains-list" class="mb-2"></div>
+        <div class="input-group mb-2">
+          <input
+            id="new-monitored-domain"
+            class="form-control"
+            placeholder="example.com"
+          />
+          <button id="add-monitored-domain" class="btn btn-outline-primary">
+            Add Domain
+          </button>
+        </div>
+        <button id="clear-monitored-domains" class="btn btn-outline-danger">
+          Clear All Monitored Domains
+        </button>
+      </div>
+    </section>
 
-  <section>
-    <h3>Private Visit History</h3>
-    <p>Visits recorded for monitored domains (native history is removed).</p>
-    <div id="visit-history-list" class="mb-2"></div>
-    <button id="export-visit-history" class="btn btn-sm btn-outline-primary">Export Visit History (JSON)</button>
-    <button id="clear-visit-history" class="btn btn-sm btn-outline-danger ms-2">Clear Visit History</button>
-  </section>
-  <section>
-    <h3>Storage Migration</h3>
-    <p>Upgrade extension storage to the new SQLite-backed database. This runs a one-time migration from the existing
-      extension storage into the embedded SQLite DB used by the extension.</p>
-    <button id="migrate-db" class="btn btn-warning">Migrate to SQLite</button>
-    <div id="migration-status" class="mt-2" aria-live="polite"></div>
-  </section>
-  <script src="db.js"></script>
-  <script src="options.js"></script>
-</body>
-
+    <section>
+      <h3>Private Visit History</h3>
+      <p>Visits recorded for monitored domains (native history is removed).</p>
+      <div id="visit-history-list" class="mb-2"></div>
+      <button id="export-visit-history" class="btn btn-sm btn-outline-primary">
+        Export Visit History (JSON)
+      </button>
+      <button id="clear-visit-history" class="btn btn-sm btn-outline-danger ms-2">
+        Clear Visit History
+      </button>
+    </section>
+    <section>
+      <h3>Storage Migration</h3>
+      <p>
+        Upgrade extension storage to the new SQLite-backed database. This runs a one-time
+        migration from the existing extension storage into the embedded SQLite DB used by
+        the extension.
+      </p>
+      <button id="migrate-db" class="btn btn-warning">Migrate to SQLite</button>
+      <div id="migration-status" class="mt-2" aria-live="polite"></div>
+    </section>
+    <script src="db.js"></script>
+    <script src="options.js"></script>
+  </body>
 </html>

@@ -1,11 +1,12 @@
-@import "npm:bootstrap/dist/css/bootstrap.min.css";
+@import 'npm:bootstrap/dist/css/bootstrap.min.css';
 
 @font-face {
   font-family: 'Noto Sans JP';
   font-style: normal;
   font-display: swap;
   font-weight: 400;
-  src: url("npm:@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2") format('woff2');
+  src: url('npm:@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2')
+    format('woff2');
 }
 
 @font-face {
@@ -13,7 +14,8 @@
   font-style: normal;
   font-display: swap;
   font-weight: 700;
-  src: url("npm:@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2") format('woff2');
+  src: url('npm:@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2')
+    format('woff2');
 }
 
 /* base styles */

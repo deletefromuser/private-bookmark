@@ -25,7 +25,7 @@
 
   function stripSqlNoise(sql) {
     let out = '';
-    for (let i = 0; i < sql.length; ) {
+    for (let i = 0; i < sql.length;) {
       const ch = sql[i];
       const next = sql[i + 1];
       if (ch === '-' && next === '-') {
@@ -139,11 +139,7 @@
 
   async function hashPassword(password) {
     const salt = crypto.getRandomValues(new Uint8Array(PBKDF2_SALT_BYTES));
-    const hash = await derivePasswordBits(
-      password,
-      salt,
-      PBKDF2_ITERATIONS
-    );
+    const hash = await derivePasswordBits(password, salt, PBKDF2_ITERATIONS);
     return `pbkdf2$${PBKDF2_ITERATIONS}$${bytesToHex(salt)}$${bytesToHex(hash)}`;
   }
 
@@ -183,10 +179,7 @@
     const size = Math.max(1, Number(pageSize) || 1);
     const count = Math.max(0, Number(total) || 0);
     const lastPage = count === 0 ? 0 : Math.max(0, Math.ceil(count / size) - 1);
-    const index = Math.min(
-      Math.max(0, Number(pageIndex) || 0),
-      lastPage
-    );
+    const index = Math.min(Math.max(0, Number(pageIndex) || 0), lastPage);
     const start = count === 0 ? 0 : index * size + 1;
     const end = Math.min(count, (index + 1) * size);
     return {
@@ -208,9 +201,7 @@
   ) {
     const stored = await globalThis.db.getPasswordHash();
     if (!stored) {
-      return allowWhenUnset
-        ? { ok: true }
-        : { ok: false, error: missingPasswordMessage };
+      return allowWhenUnset ? { ok: true } : { ok: false, error: missingPasswordMessage };
     }
     if (!password) return { ok: false, error: 'Password required' };
     const verification = await verifyPassword(password, stored);

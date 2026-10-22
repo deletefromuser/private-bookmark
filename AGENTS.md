@@ -1,9 +1,11 @@
 # AGENTS.md
 
 ## Project
+
 Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private bookmarks and visit history in SQLite WASM. Source files live at the repo root; the loadable extension is built into `build/`.
 
 ## Commands
+
 - `npm install`
 - `npm start` - Parcel watch of explicit entries into `build/`
 - `npm run build` - deletes `build/`, bundles explicit HTML/JS entries, then copies `manifest.json` and `icons/*`
@@ -16,6 +18,7 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - `package-lock.json` is committed. Keep it in sync with `package.json`.
 
 ## Architecture
+
 - `background.js` is the service worker. It owns SQLite, handles `QUERY`, `QUERY_PARAMS`, and `MIGRATE_DB`, creates the schema, and performs history monitoring.
 - SQLite is opened once through a cached promise. All queries are serialized through a promise queue and the connection is closed on `chrome.runtime.onSuspend`.
 - `QUERY_PARAMS` uses real prepared statements and `bind_collection`. Most convenience helpers in `db.js` still interpolate escaped strings (`'` doubled).
@@ -27,6 +30,7 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - Legacy `chrome.storage.local` data is migrated automatically when the worker starts. The `db_migrated_v1` setting in the SQLite `settings` table is checked before importing legacy data, so completed installs skip that work.
 
 ## Data and SQL
+
 - Real table is `visit_history` (snake_case): `id, url, title, domain, timestamp`. The `bookmarks` table uses `folderId` camelCase.
 - `db.queryWithParams` is real parameter binding. `?` characters inside string literals are safe.
 - Most convenience SQL still uses interpolated, escaped strings. Preserve the existing escaping pattern or migrate the helper to `queryWithParams`.
@@ -34,6 +38,7 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - Password hashes use salted PBKDF2-SHA-256 (`210000` iterations). Legacy 64-character SHA-256 hashes are accepted and upgraded on successful login. There is no master password.
 
 ## Gotchas
+
 - Use the vendored root `wa-sqlite/` directory via relative imports in `background.js`. Do not add `@vlcn.io/wa-sqlite`.
 - `manifest.json` CSP requires `'wasm-unsafe-eval'` for SQLite WASM; removing it breaks the extension.
 - `manifest.json` uses a dotted `version` plus a human-readable `version_name`; bump both manually for releases. It is independent of `package.json`.

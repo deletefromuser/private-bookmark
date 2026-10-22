@@ -10,12 +10,7 @@ const browserGlobals = {
 
 export default [
   {
-    ignores: [
-      'build/**',
-      'node_modules/**',
-      'wa-sqlite/**',
-      'package-lock.json',
-    ],
+    ignores: ['build/**', 'node_modules/**', 'wa-sqlite/**', 'package-lock.json'],
   },
   js.configs.recommended,
   {
@@ -26,10 +21,7 @@ export default [
       globals: browserGlobals,
     },
     rules: {
-      'no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', caughtErrors: 'none' },
-      ],
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrors: 'none' }],
       'no-empty': ['error', { allowEmptyCatch: true }],
     },
   },

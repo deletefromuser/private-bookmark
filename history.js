@@ -1,9 +1,7 @@
 async function loadHistory() {
   // pagination params
-  const pageSize = (globalThis.__hist_page_size =
-    globalThis.__hist_page_size || 20);
-  const pageIndex = (globalThis.__hist_page_index =
-    globalThis.__hist_page_index || 0);
+  const pageSize = (globalThis.__hist_page_size = globalThis.__hist_page_size || 20);
+  const pageIndex = (globalThis.__hist_page_index = globalThis.__hist_page_index || 0);
   const offset = pageIndex * pageSize;
   // build filters from search UI
   const titleFilter = (document.getElementById('search-title')?.value || '').trim();
@@ -143,20 +141,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (ev.key === 'Enter') document.getElementById('unlock').click();
     });
   }
-  document
-    .getElementById('refresh-history')
-    ?.addEventListener('click', () => {
-      try {
-        loadHistory();
-      } catch (e) {
-        console.warn('Refresh history failed', e);
-      }
-    });
+  document.getElementById('refresh-history')?.addEventListener('click', () => {
+    try {
+      loadHistory();
+    } catch (e) {
+      console.warn('Refresh history failed', e);
+    }
+  });
   document.getElementById('hist-prev')?.addEventListener('click', () => {
-    globalThis.__hist_page_index = Math.max(
-      0,
-      (globalThis.__hist_page_index || 0) - 1
-    );
+    globalThis.__hist_page_index = Math.max(0, (globalThis.__hist_page_index || 0) - 1);
     loadHistory();
   });
   document.getElementById('hist-next')?.addEventListener('click', () => {

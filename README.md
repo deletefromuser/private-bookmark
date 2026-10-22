@@ -2,10 +2,12 @@
 
 Overview
 --------
+
 Private Bookmark stores bookmarks and a private visit history inside the extension using an embedded SQLite database (WASM) managed by the background worker. The extension prioritizes local storage for bookmarks and limited history monitoring for user-selected domains.
 
 Structure
 ---------
+
 - Popup: quick-add UI and shortcuts (add current tab, open view or options).
 - View page: password-protected bookmark viewer, editor, and paginated list (`view.html` / `view.js`).
 - Options page: settings, folders, import/export, backup/restore, and monitored domains (`options.html` / `options.js`).
@@ -18,6 +20,7 @@ Structure
 
 Key features
 ------------
+
 - Private bookmarks stored in the SQLite `bookmarks` table with fields: `{ id, title, url, folderId, added }`.
 - Folder support for organizing bookmarks and moving bookmarks between folders.
 - Import from Chrome bookmarks and export to Netscape HTML.
@@ -30,6 +33,7 @@ Key features
 
 Permissions
 -----------
+
 - `storage` - legacy `chrome.storage.local` migration; current data lives in SQLite.
 - `tabs` - read current tab URL/title for quick-add and monitoring helpers.
 - `bookmarks` - import from Chrome's bookmark tree.
@@ -38,6 +42,7 @@ Permissions
 
 Security considerations
 -----------------------
+
 - Password hashes use salted PBKDF2-SHA-256. There is no recovery master password; clearing the password requires the current password or local data reset.
 - The password protects the viewer UI. It does not encrypt the SQLite database at rest.
 - The extension reads from and deletes entries in Chrome history when a monitored domain is visited. Users should understand this behavior before enabling monitoring.
@@ -45,6 +50,7 @@ Security considerations
 
 How history monitoring works
 ----------------------------
+
 - Users add domains to the monitored domains list on the Options page.
 - The background worker listens for completed navigations through `webNavigation`, with a `tabs.onUpdated` fallback.
 - For a monitored domain, the worker:
@@ -55,6 +61,7 @@ How history monitoring works
 
 UI/Usage
 --------
+
 - Popup:
   - Add a bookmark or add the current tab.
   - Monitor the current domain.
@@ -73,6 +80,7 @@ UI/Usage
 
 Development
 -----------
+
 - Install dependencies: `npm install`
 - Watch build: `npm start`
 - Production build: `npm run build` (deletes `build/`, bundles explicit entries, then copies `manifest.json` and `icons/*`)
@@ -85,6 +93,7 @@ Development
 
 Testing checklist
 -----------------
+
 1. Run `npm run build` and load `build/` unpacked in `chrome://extensions`.
 2. Confirm permissions include `storage`, `tabs`, `bookmarks`, `history`, and `webNavigation`.
 3. Add a domain to monitored domains in Options.
@@ -97,8 +106,10 @@ Testing checklist
 
 Contributing
 ------------
+
 Pull requests are welcome. Include tests when available or a small manual test plan for UI changes.
 
 License
 -------
+
 MIT

@@ -71,7 +71,9 @@ const db = (function () {
       }
     },
     async setPasswordHash(passwordHash) {
-      await run(`INSERT OR REPLACE INTO settings(k, v) VALUES('passwordHash', '${passwordHash}');`);
+      await run(
+        `INSERT OR REPLACE INTO settings(k, v) VALUES('passwordHash', '${passwordHash}');`
+      );
     },
     async deletePasswordHash() {
       await run(`DELETE FROM settings WHERE k = 'passwordHash';`);
@@ -147,7 +149,9 @@ const db = (function () {
       return { id: iid, name };
     },
     async getMonitoredDomains() {
-      return (await rawQuery('SELECT domain FROM monitored_domains')).map((r) => r.domain);
+      return (await rawQuery('SELECT domain FROM monitored_domains')).map(
+        (r) => r.domain
+      );
     },
     async addMonitoredDomain(domain) {
       const d = (domain || '').replaceAll("'", "''");
