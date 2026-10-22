@@ -21,9 +21,17 @@ async function loadBookmarks() {
   const nodes = await window.db.getBookmarksPage(pageSize, offset);
   const total = await window.db.countBookmarks();
 
+  if (total > 0 && offset >= total) {
+    const lastPage = Math.max(0, Math.ceil(total / pageSize) - 1);
+    if (pageIndex !== lastPage) {
+      window.__bm_page_index = lastPage;
+      return loadBookmarks();
+    }
+  }
+
   listEl.innerHTML = '';
   if (!nodes || nodes.length === 0) {
-    listEl.textContent = 'No bookmarks';
+    listEl.textContent = total > 0 ? 'No bookmarks on this page' : 'No bookmarks';
     updateBmPageInfo(pageIndex, pageSize, total);
     return;
   }
@@ -63,7 +71,7 @@ async function loadBookmarks() {
 
 function updateBmPageInfo(pageIndex, pageSize, total) {
   const info = document.getElementById('bm-page-info');
-  const start = pageIndex * pageSize + 1;
+  const start = total === 0 ? 0 : pageIndex * pageSize + 1;
   const end = Math.min(total, (pageIndex + 1) * pageSize);
   if (info) info.textContent = `${start}-${end} of ${total}`;
   // toggle prev/next

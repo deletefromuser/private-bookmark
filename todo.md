@@ -20,7 +20,7 @@
 - [x] **Fix folder move bug.** `view.js:159` appends a trailing space to `folderId`, so moved bookmarks disappear from folder grouping.
 - [x] **Fix manifest version.** `20260102` exceeds Chrome's documented 0–65535 per-part limit. Use a dotted date such as `2026.10.22` and add `version_name`.
 - [x] **Handle runtime messaging failures.** `db.js:6-53` ignores `chrome.runtime.lastError`, so promises can hang if the worker is unavailable.
-- [ ] **Fix empty bookmark pagination.** `view.js:61-71` displays `1-0 of 0`.
+- [x] **Fix empty bookmark pagination.** `view.js:61-71` displays `1-0 of 0`.
 - [ ] **Fix `MIGRATE_DB` response handling.** `background.js:88-106` can call `sendResponse` twice and does not await the nested query.
 
 ## P2 — Maintainability, privacy & docs
