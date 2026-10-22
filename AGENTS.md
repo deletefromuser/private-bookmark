@@ -1,34 +1,40 @@
 # AGENTS.md
 
 ## Project
-Chrome MV3 extension (vanilla JS, Bootstrap CDN) that stores private bookmarks and visit history in SQLite WASM. Source files live at the repo root; the loadable extension is built into `build/`.
+Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private bookmarks and visit history in SQLite WASM. Source files live at the repo root; the loadable extension is built into `build/`.
 
 ## Commands
 - `npm install`
-- `npm start` — Parcel watch into `build/`
-- `npm run build` — bundle HTML/JS/CSS, then copy `manifest.json` and `icons/*` into `build/`
-- Load `build/` via `chrome://extensions` → Developer mode → Load unpacked.
-- No tests, lint, or typecheck are configured. `npm test` intentionally fails; verify manually using the README checklist.
-- Delete `build/` before a clean build; Parcel does not remove old hashed chunks.
+- `npm start` - Parcel watch of explicit entries into `build/`
+- `npm run build` - deletes `build/`, bundles explicit HTML/JS entries, then copies `manifest.json` and `icons/*`
+- `npm run clean` - remove `build/`
+- Load `build/` via `chrome://extensions` -> Developer mode -> Load unpacked.
+- No tests, lint, or typecheck are configured yet. `npm test` intentionally fails; verify manually using the README checklist.
+- `package-lock.json` is committed. Keep it in sync with `package.json`.
 
 ## Architecture
 - `background.js` is the service worker. It owns SQLite, handles `QUERY`, `QUERY_PARAMS`, and `MIGRATE_DB`, creates the schema, and performs history monitoring.
-- `db.js` never opens SQLite directly. It sends `chrome.runtime` messages to the background and flattens result blocks into objects, exposed as `globalThis.db`.
+- SQLite is opened once through a cached promise. All queries are serialized through a promise queue and the connection is closed on `chrome.runtime.onSuspend`.
+- `QUERY_PARAMS` uses real prepared statements and `bind_collection`. Most convenience helpers in `db.js` still interpolate escaped strings (`'` doubled).
+- `db.js` never opens SQLite directly. It sends `chrome.runtime` messages to the background, checks `chrome.runtime.lastError`, and flattens result blocks into objects, exposed as `globalThis.db`.
 - Pages: `popup.*` (add/monitor/open), `view.*` (password-protected bookmarks), `options.*` (settings, folders, import/export, backup), `history.*` (visit history), `sql.*` (SQL console opened from Options).
+- `shared.js` must load before page scripts; it provides `AppUtils` escaping, URL safety, destructive SQL detection, PBKDF2 password functions, and `authenticate`.
 - `modal.js` must load before page scripts; it provides async `_modal.showConfirm` / `showTextPrompt` used everywhere.
-- Every background `exec()` call re-initializes SQLite, registers the IDB VFS, and opens DB `test` from scratch. Avoid large/frequent queries.
 - Schema and indexes are defined only in `createSchema()` in `background.js`; there are no migration files. Updates to schema must be added there.
-- Legacy `chrome.storage.local` data is migrated automatically when the worker starts, gated by `db_migrated_v1` in the SQLite `settings` table.
+- Legacy `chrome.storage.local` data is migrated automatically when the worker starts. The `db_migrated_v1` setting in the SQLite `settings` table is checked before schema creation, so completed installs skip the migration path.
 
 ## Data and SQL
-- Real table is `visit_history` (snake_case). README references to `visitHistory` / extension storage are stale; trust the code.
-- Most SQL is built by interpolating escaped strings (`'` doubled). `db.queryWithParams` is not real parameter binding: the background naively replaces each `?` in order, so a `?` inside a literal breaks it. Preserve the existing escaping pattern.
-- Options "backup/restore" is a JSON dump of all tables, not a raw SQLite file. Bookmark export is Netscape HTML.
+- Real table is `visit_history` (snake_case): `id, url, title, domain, timestamp`. The `bookmarks` table uses `folderId` camelCase.
+- `db.queryWithParams` is real parameter binding. `?` characters inside string literals are safe.
+- Most convenience SQL still uses interpolated, escaped strings. Preserve the existing escaping pattern or migrate the helper to `queryWithParams`.
+- Options backup/restore is a JSON dump of all tables, not a raw SQLite file. Restore is validated, confirmed, and transactional. Bookmark export is Netscape HTML.
+- Password hashes use salted PBKDF2-SHA-256 (`210000` iterations). Legacy 64-character SHA-256 hashes are accepted and upgraded on successful login. There is no master password.
 
 ## Gotchas
-- Use the vendored root `wa-sqlite/` directory via relative imports in `background.js`. The `@vlcn.io/wa-sqlite` npm dependency is unused, and `lib/wa-sqlite/` is empty.
+- Use the vendored root `wa-sqlite/` directory via relative imports in `background.js`. Do not add `@vlcn.io/wa-sqlite`.
 - `manifest.json` CSP requires `'wasm-unsafe-eval'` for SQLite WASM; removing it breaks the extension.
-- Password hashes are unsalted SHA-256 in `settings.passwordHash`. A recovery master password `tomhawk001` is hardcoded in `options.js` and `history.js`; README says to replace it before distribution.
-- History monitoring intentionally deletes matching URLs from Chrome's native history after recording a visit. Debounce is per-URL, 5s, in `background.js`.
-- `manifest.json` version is a date string (e.g. `20260102`) and is independent of `package.json`; bump it manually for releases.
-- Known bug: moving a bookmark to another folder in `view.js` appends a trailing space to `folderId`.
+- `manifest.json` uses a dotted `version` plus a human-readable `version_name`; bump both manually for releases. It is independent of `package.json`.
+- Bootstrap and Noto Sans JP are imported locally in `styles.css`; do not reintroduce CDN links.
+- History monitoring requires `webNavigation` and intentionally deletes matching URLs from Chrome's native history after recording a visit. Debounce is per-URL, 5s, in `background.js`.
+- The password gates the viewer UI only; SQLite data is not encrypted at rest.
+- Build entries are explicit in `package.json`. Add new pages or standalone workers there instead of restoring a `*.js` glob.
