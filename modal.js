@@ -72,52 +72,5 @@
     });
   }
 
-  function showForm(fields) {
-    // fields: [{name,label,value,placeholder}]
-    return new Promise((res) => {
-      const modal = createModal();
-      const content = modal.querySelector('.modal-content');
-      fields.forEach((f) => {
-        const label = document.createElement('div');
-        label.textContent = f.label;
-        content.appendChild(label);
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.name = f.name;
-        input.value = f.value || '';
-        input.placeholder = f.placeholder || '';
-        input.style.width = '100%';
-        content.appendChild(input);
-      });
-      const inputs = content.querySelectorAll('input');
-      if (inputs[0]) inputs[0].focus();
-      const actions = modal.querySelector('.modal-actions');
-      const ok = document.createElement('button');
-      ok.textContent = 'OK';
-      const cancel = document.createElement('button');
-      cancel.textContent = 'Cancel';
-      actions.appendChild(ok);
-      actions.appendChild(cancel);
-      ok.addEventListener('click', () => {
-        const out = {};
-        inputs.forEach((i) => (out[i.name] = i.value));
-        cleanup(modal);
-        res(out);
-      });
-      cancel.addEventListener('click', () => {
-        cleanup(modal);
-        res(null);
-      });
-      modal.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Escape') cancel.click();
-      });
-      inputs.forEach((i) =>
-        i.addEventListener('keydown', (ev) => {
-          if (ev.key === 'Enter') ok.click();
-        })
-      );
-    });
-  }
-
-  window._modal = { showConfirm, showTextPrompt, showForm };
+  window._modal = { showConfirm, showTextPrompt };
 })();

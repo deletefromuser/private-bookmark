@@ -68,19 +68,6 @@ async function runSql() {
   }
 }
 
-function flattenQueryBlocks(res) {
-  const out = [];
-  for (const block of res || []) {
-    const cols = block.columns || [];
-    for (const r of block.rows || []) {
-      const obj = {};
-      for (let i = 0; i < cols.length; i++) obj[cols[i]] = r[i];
-      out.push(obj);
-    }
-  }
-  return out;
-}
-
 function clearSql() {
   const input = document.getElementById('sql-input');
   if (input) input.value = '';

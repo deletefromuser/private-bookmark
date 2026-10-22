@@ -313,7 +313,6 @@ document
     );
     if (!ok) return;
     await db.run('DELETE FROM visit_history;');
-    if (typeof loadVisitHistoryUI === 'function') loadVisitHistoryUI();
   });
 
 document

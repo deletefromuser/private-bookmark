@@ -27,7 +27,7 @@
 
 - [x] **Vendor Bootstrap/Noto locally.** Every page currently loads CSS/fonts from jsDelivr/Google, leaking requests from a privacy-focused extension and breaking offline use.
 - [x] **Deduplicate shared logic.** `sha256` is copied in `popup.js`, `view.js`, `options.js`, and `history.js`; unlock/auth logic is duplicated in `view.js` and `history.js`.
-- [ ] **Remove unused code/deps.** `@vlcn.io/wa-sqlite` (`package.json:22`) and empty `lib/wa-sqlite/` are unused; actual code imports vendored root `wa-sqlite/`.
+- [x] **Remove unused code/deps.** `@vlcn.io/wa-sqlite` (`package.json:22`) and empty `lib/wa-sqlite/` are unused; actual code imports vendored root `wa-sqlite/`.
 - [ ] **Clean the build.** Replace the `*.js` Parcel entry glob with explicit entries and delete `build/` before building; stale hashed chunks accumulate. Commit `package-lock.json` instead of ignoring it (`.gitignore:5`).
 - [ ] **Update `README.md` and `AGENTS.md`.** Document loading `build/`, the real `visit_history` schema, JSON backup format, the missing permission, and correct migration-flag behavior. The current AGENTS claim that migration is gated by the SQLite flag is inaccurate.
 - [ ] **Remove dead/unimplemented code.** `sql.js:77-88` `flattenQueryBlocks`, `modal.js:75-120` `showForm`, and the `loadVisitHistoryUI` reference / empty visit-history list in `options.js`.
