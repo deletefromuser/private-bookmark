@@ -11,22 +11,6 @@ async function addBookmark(title, url, folderId) {
   });
 }
 
-function normalizeUrl(u) {
-  try {
-    const parsed = new URL(u);
-    // drop hash, keep origin + pathname + search
-    let path = parsed.pathname || '/';
-    // remove trailing slash for comparison
-    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-    return parsed.origin + path + (parsed.search || '');
-  } catch (e) {
-    // fallback: strip hash and trailing slash
-    let s = String(u).split('#')[0];
-    if (s.length > 1 && s.endsWith('/')) s = s.slice(0, -1);
-    return s;
-  }
-}
-
 // load folders into the popup select (db-backed)
 async function loadFoldersIntoSelect() {
   const sel = document.getElementById('folder-select');

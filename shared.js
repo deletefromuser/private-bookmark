@@ -161,20 +161,42 @@
         return { ok: false, needsUpgrade: false };
       }
       const actual = await derivePasswordBits(password, salt, iterations);
+      const ok = timingSafeEqual(actual, expected);
       return {
-        ok: timingSafeEqual(actual, expected),
-        needsUpgrade: iterations < PBKDF2_ITERATIONS,
+        ok,
+        needsUpgrade: ok && iterations < PBKDF2_ITERATIONS,
       };
     }
     if (/^[0-9a-f]{64}$/i.test(stored)) {
       const actual = hexToBytes(await sha256Hex(password));
       const expected = hexToBytes(stored);
+      const ok = timingSafeEqual(actual, expected);
       return {
-        ok: timingSafeEqual(actual, expected),
-        needsUpgrade: true,
+        ok,
+        needsUpgrade: ok,
       };
     }
     return { ok: false, needsUpgrade: false };
+  }
+
+  function getPageInfo(pageIndex, pageSize, total) {
+    const size = Math.max(1, Number(pageSize) || 1);
+    const count = Math.max(0, Number(total) || 0);
+    const lastPage = count === 0 ? 0 : Math.max(0, Math.ceil(count / size) - 1);
+    const index = Math.min(
+      Math.max(0, Number(pageIndex) || 0),
+      lastPage
+    );
+    const start = count === 0 ? 0 : index * size + 1;
+    const end = Math.min(count, (index + 1) * size);
+    return {
+      pageIndex: index,
+      start,
+      end,
+      total: count,
+      hasPrev: index > 0,
+      hasNext: end < count,
+    };
   }
 
   async function authenticate(
@@ -203,6 +225,7 @@
     escapeHtml,
     safeUrl,
     isDestructiveSql,
+    getPageInfo,
     sha256Hex,
     hashPassword,
     verifyPassword,

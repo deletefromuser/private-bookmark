@@ -9,7 +9,10 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - `npm run build` - deletes `build/`, bundles explicit HTML/JS entries, then copies `manifest.json` and `icons/*`
 - `npm run clean` - remove `build/`
 - Load `build/` via `chrome://extensions` -> Developer mode -> Load unpacked.
-- No tests, lint, or typecheck are configured yet. `npm test` intentionally fails; verify manually using the README checklist.
+- `npm test` - `node:test` coverage for shared helpers in `test/`
+- `npm run lint` - ESLint with flat config
+- `npm run format` / `npm run format:check` - Prettier
+- CI runs `npm test`, `npm run lint`, and `npm run build`.
 - `package-lock.json` is committed. Keep it in sync with `package.json`.
 
 ## Architecture

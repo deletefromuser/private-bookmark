@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Overview\r --------\r Private Bookmark stores bookmarks and a private visit history inside the extension using an embedded SQLite (WASM) database managed by the background worker. This extension prioritizes local, private storage for bookmarks and limited history monitoring for user-selected domains.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "clean": "node -e \"require('fs').rmSync('build',{recursive:true,force:true})\"",
     "start": "parcel watch popup.html view.html options.html history.html sql.html background.js --no-cache --dist-dir build",
     "build": "npm run clean && parcel build popup.html view.html options.html history.html sql.html background.js --no-cache --dist-dir build --no-source-maps && copyfiles manifest.json icons/* build"
@@ -24,7 +27,11 @@
     "bootstrap": "^5.3.8"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "copyfiles": "^2.4.1",
-    "parcel": "^2.16.1"
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "parcel": "^2.16.1",
+    "prettier": "^3.9.10"
   }
 }

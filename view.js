@@ -71,14 +71,13 @@ async function loadBookmarks() {
 
 function updateBmPageInfo(pageIndex, pageSize, total) {
   const info = document.getElementById('bm-page-info');
-  const start = total === 0 ? 0 : pageIndex * pageSize + 1;
-  const end = Math.min(total, (pageIndex + 1) * pageSize);
-  if (info) info.textContent = `${start}-${end} of ${total}`;
+  const page = globalThis.AppUtils.getPageInfo(pageIndex, pageSize, total);
+  if (info) info.textContent = `${page.start}-${page.end} of ${page.total}`;
   // toggle prev/next
   const prev = document.getElementById('bm-prev');
   const next = document.getElementById('bm-next');
-  if (prev) prev.disabled = pageIndex <= 0;
-  if (next) next.disabled = end >= total;
+  if (prev) prev.disabled = !page.hasPrev;
+  if (next) next.disabled = !page.hasNext;
 }
 
 // Refresh button handler - call loadBookmarks when clicked

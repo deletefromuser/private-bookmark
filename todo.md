@@ -31,6 +31,6 @@
 - [x] **Clean the build.** Replace the `*.js` Parcel entry glob with explicit entries and delete `build/` before building; stale hashed chunks accumulate. Commit `package-lock.json` instead of ignoring it (`.gitignore:5`).
 - [x] **Update `README.md` and `AGENTS.md`.** Document loading `build/`, the real `visit_history` schema, JSON backup format, the missing permission, and correct migration-flag behavior. The current AGENTS claim that migration is gated by the SQLite flag is inaccurate.
 - [x] **Remove dead/unimplemented code.** `sql.js:77-88` `flattenQueryBlocks`, `modal.js:75-120` `showForm`, and the `loadVisitHistoryUI` reference / empty visit-history list in `options.js`.
-- [ ] **Add minimal verification.** Add `node:test` coverage for escaping/URL/pagination helpers plus ESLint/Prettier and CI; `npm test` currently fails by design.
+- [x] **Add minimal verification.** Add `node:test` coverage for escaping/URL/pagination helpers plus ESLint/Prettier and CI; `npm test` currently fails by design.
 - [ ] **Add schema versioning** via `PRAGMA user_version` instead of editing `createSchema()` alone.
 - [ ] **Align metadata.** `package.json` says ISC while `LICENSE` is MIT; clean the README-derived package description.

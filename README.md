@@ -77,8 +77,10 @@ Development
 - Watch build: `npm start`
 - Production build: `npm run build` (deletes `build/`, bundles explicit entries, then copies `manifest.json` and `icons/*`)
 - Load `build/` via `chrome://extensions` -> Developer mode -> Load unpacked.
-- `npm test` is not configured yet; verify changes manually with the checklist below.
-- There is no lint or typecheck script configured.
+- Tests: `npm test` (`node:test` coverage for shared helpers).
+- Lint: `npm run lint` (ESLint).
+- Format: `npm run format` or check with `npm run format:check` (Prettier).
+- CI runs tests, lint, and the production build on pushes and pull requests.
 
 Testing checklist
 -----------------

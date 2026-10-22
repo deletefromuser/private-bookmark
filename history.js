@@ -109,13 +109,12 @@ async function loadHistory() {
 
 function updateHistPageInfo(pageIndex, pageSize, total) {
   const info = document.getElementById('hist-page-info');
-  const start = pageIndex * pageSize + 1;
-  const end = Math.min(total, (pageIndex + 1) * pageSize);
-  if (info) info.textContent = total === 0 ? '0 of 0' : `${start}-${end} of ${total}`;
+  const page = globalThis.AppUtils.getPageInfo(pageIndex, pageSize, total);
+  if (info) info.textContent = `${page.start}-${page.end} of ${page.total}`;
   const prev = document.getElementById('hist-prev');
   const next = document.getElementById('hist-next');
-  if (prev) prev.disabled = pageIndex <= 0;
-  if (next) next.disabled = end >= total;
+  if (prev) prev.disabled = !page.hasPrev;
+  if (next) next.disabled = !page.hasNext;
 }
 
 function showUnlockError(msg) {
