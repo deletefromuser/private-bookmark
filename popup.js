@@ -10,6 +10,9 @@ async function sha256(text) {
 
 async function addBookmark(title, url, folderId) {
   if (!url) return alert('URL required');
+  if (globalThis.AppUtils.safeUrl(url) === '#') {
+    return alert('Only http(s) URLs can be bookmarked');
+  }
   return await globalThis.db.addBookmark({
     title: title || url,
     url,

@@ -37,21 +37,27 @@ async function loadBookmarks() {
     folderMap[f.id] = f.name;
   });
   // render list (flat) with move/select and controls
+  const { escapeHtml, safeUrl } = globalThis.AppUtils;
   nodes.forEach((n) => {
     const row = document.createElement('div');
     row.className = 'bm-row';
+    const bookmarkId = escapeHtml(n.id);
     const folderSelectHtml =
-      `<select data-id="${n.id}" class="move-select form-select mb-2">` +
+      `<select data-id="${bookmarkId}" class="move-select form-select mb-2">` +
       (folders || [])
-        .map((f) => `<option value="${f.id}" ${f.id === (n.folderId || '1') ? 'selected' : ''}>${f.name}</option>`)
+        .map(
+          (f) =>
+            `<option value="${escapeHtml(f.id)}" ${f.id === (n.folderId || '1') ? 'selected' : ''}>${escapeHtml(f.name)}</option>`
+        )
         .join('') +
       `</select>`;
     const added = n.added ? new Date(Number(n.added)).toLocaleString() : '';
-    const addedHtml = added ? `<span class="bm-added">${added}</span>` : '';
-    row.innerHTML = `<a class="bm-link" href="${n.url || '#'}" target="_blank">${n.title || n.url}</a> ${addedHtml}
+    const addedHtml = added ? `<span class="bm-added">${escapeHtml(added)}</span>` : '';
+    const title = n.title || n.url;
+    row.innerHTML = `<a class="bm-link" href="${escapeHtml(safeUrl(n.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a> ${addedHtml}
       ${folderSelectHtml}
-      <button data-id="${n.id}" class="edit btn btn-primary me-2">Edit</button>
-      <button data-id="${n.id}" class="del btn btn-danger me-2">Delete</button><hr>`;
+      <button data-id="${bookmarkId}" class="edit btn btn-primary me-2">Edit</button>
+      <button data-id="${bookmarkId}" class="del btn btn-danger me-2">Delete</button><hr>`;
     listEl.appendChild(row);
   });
 

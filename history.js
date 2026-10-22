@@ -78,7 +78,7 @@ async function loadHistory() {
     const left = document.createElement('div');
     left.className = 'ms-2 me-auto';
     const title = document.createElement('a');
-    title.href = e.url;
+    title.href = globalThis.AppUtils.safeUrl(e.url);
     title.target = '_blank';
     title.rel = 'noopener noreferrer';
     title.textContent = e.title || e.url;

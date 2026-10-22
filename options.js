@@ -82,13 +82,14 @@ async function loadFoldersUI() {
   if (!el) return;
   let folders = await db.getFolders();
   if (!folders || folders.length === 0) folders = [{ id: '1', name: 'Default' }];
+  const { escapeHtml } = globalThis.AppUtils;
   el.innerHTML = '';
   for (const f of folders) {
     const row = document.createElement('div');
     row.className = 'folder-row';
-    row.innerHTML = `<span class="folder-name">${f.name}</span>
-      <button data-id="${f.id}" class="rename-folder btn btn-primary me-2">Rename</button>
-      <button data-id="${f.id}" class="delete-folder btn btn-danger me-2">Delete</button>`;
+    row.innerHTML = `<span class="folder-name">${escapeHtml(f.name)}</span>
+      <button data-id="${escapeHtml(f.id)}" class="rename-folder btn btn-primary me-2">Rename</button>
+      <button data-id="${escapeHtml(f.id)}" class="delete-folder btn btn-danger me-2">Delete</button>`;
     el.appendChild(row);
   }
 }
@@ -321,16 +322,17 @@ async function showDeleteFolderPrompt(folderId) {
   const folders = await db.getFolders();
   const folder = folders.find((f) => f.id === folderId);
   if (!folder) return alert('Folder not found');
+  const { escapeHtml } = globalThis.AppUtils;
   const promptDiv = document.createElement('div');
   promptDiv.className = 'folder-delete-prompt';
   const otherFolders = folders.filter((f) => f.id !== folderId);
   let moveSelectHtml =
     '<select id="delete-move-target" class="form-select mb-2">';
   for (const f of otherFolders) {
-    moveSelectHtml += `<option value="${f.id}">${f.name}</option>`;
+    moveSelectHtml += `<option value="${escapeHtml(f.id)}">${escapeHtml(f.name)}</option>`;
   }
   moveSelectHtml += '</select>';
-  promptDiv.innerHTML = `<div>Delete folder "${folder.name}" — what to do with its bookmarks?</div>
+  promptDiv.innerHTML = `<div>Delete folder "${escapeHtml(folder.name)}" — what to do with its bookmarks?</div>
     <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label><br>
     <label><input type="radio" name="del-action" value="move"> Move bookmarks to: ${otherFolders.length ? moveSelectHtml : '<em>(no other folder)</em>'}</label>
     <div><button id="del-confirm" class="btn btn-danger me-2">Confirm</button> <button id="del-cancel" class="btn btn-secondary me-2">Cancel</button></div>`;
@@ -473,12 +475,16 @@ document.getElementById('export-html')?.addEventListener('click', async () => {
   const bms = await db.getBookmarks();
   let folders = await db.getFolders();
   if (!folders || folders.length === 0) folders = [{ id: '1', name: 'Default' }];
+  const { escapeHtml } = globalThis.AppUtils;
   let html =
     '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
   for (const folder of folders) {
-    html += `<DT><H3>${folder.name}</H3>\n<DL><p>\n`;
+    html += `<DT><H3>${escapeHtml(folder.name)}</H3>\n<DL><p>\n`;
     const items = bms.filter((b) => (b.folderId || '1') === folder.id);
-    for (const b of items) html += `<DT><A HREF="${b.url}">${b.title || b.url}</A>\n`;
+    for (const b of items) {
+      const title = b.title || b.url;
+      html += `<DT><A HREF="${escapeHtml(b.url)}">${escapeHtml(title)}</A>\n`;
+    }
     html += '</DL><p>\n';
   }
   html += '</DL><p>\n';
