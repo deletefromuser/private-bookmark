@@ -212,62 +212,83 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
       if (status) status.textContent = 'Invalid JSON file';
       return;
     }
-    // Basic validation
-    if (!obj || !obj.settings || !obj.folders || !obj.bookmarks) {
+    const isObject = (value) =>
+      typeof value === 'object' && value !== null && !Array.isArray(value);
+    if (
+      !isObject(obj) ||
+      !Array.isArray(obj.settings) ||
+      !Array.isArray(obj.folders) ||
+      !Array.isArray(obj.bookmarks)
+    ) {
       if (status) status.textContent = 'JSON missing required tables';
       return;
     }
+    const monitored = Array.isArray(obj.monitored) ? obj.monitored : [];
+    const visitHistory = Array.isArray(obj.visit_history) ? obj.visit_history : [];
+    const allRows = [
+      ...obj.settings,
+      ...obj.folders,
+      ...obj.bookmarks,
+      ...monitored,
+      ...visitHistory,
+    ];
+    if (allRows.some((row) => !isObject(row))) {
+      if (status) status.textContent = 'JSON contains invalid rows';
+      return;
+    }
+    const confirmed = await globalThis._modal.showConfirm(
+      'Restore this backup? All current bookmarks, history, and settings will be replaced.'
+    );
+    if (!confirmed) return;
     if (status) status.textContent = 'Restoring database...';
-    // Run restore in a transaction using SQL statements via db.run
-    // await db.run('BEGIN TRANSACTION;');
+    const esc = (value) => String(value ?? '').replaceAll("'", "''");
+    const statements = [
+      'BEGIN;',
+      'DELETE FROM settings;',
+      'DELETE FROM folders;',
+      'DELETE FROM bookmarks;',
+      'DELETE FROM monitored_domains;',
+      'DELETE FROM visit_history;',
+    ];
     try {
-      await db.run('DELETE FROM settings;');
-      await db.run('DELETE FROM folders;');
-      await db.run('DELETE FROM bookmarks;');
-      await db.run('DELETE FROM monitored_domains;');
-      await db.run('DELETE FROM visit_history;');
-      for (const s of obj.settings || []) {
-        const k = String(s.k).replaceAll("'", "''");
-        const v = s.v == null ? '' : String(s.v).replaceAll("'", "''");
-        await db.run(`INSERT INTO settings(k,v) VALUES('${k}','${v}');`);
+      for (const s of obj.settings) {
+        statements.push(
+          `INSERT INTO settings(k,v) VALUES('${esc(s.k)}','${esc(s.v)}');`
+        );
       }
-      for (const f of obj.folders || []) {
-        const id = String(f.id).replaceAll("'", "''");
-        const name = String(f.name || '').replaceAll("'", "''");
-        await db.run(`INSERT INTO folders(id,name) VALUES('${id}','${name}');`);
+      for (const f of obj.folders) {
+        statements.push(
+          `INSERT INTO folders(id,name) VALUES('${esc(f.id)}','${esc(f.name)}');`
+        );
       }
-      for (const b of obj.bookmarks || []) {
-        const id = String(b.id).replaceAll("'", "''");
-        const title = String(b.title || '').replaceAll("'", "''");
-        const url = String(b.url || '').replaceAll("'", "''");
-        const folderId = String(b.folderId || '1').replaceAll("'", "''");
+      for (const b of obj.bookmarks) {
         const added = Number(b.added) || Date.now();
-        await db.run(
-          `INSERT INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`
+        statements.push(
+          `INSERT INTO bookmarks(id,title,url,folderId,added) VALUES('${esc(b.id)}','${esc(b.title)}','${esc(b.url)}','${esc(b.folderId || '1')}', ${added});`
         );
       }
-      for (const m of obj.monitored || []) {
-        const domain = String(m.domain || '').replaceAll("'", "''");
-        await db.run(`INSERT INTO monitored_domains(domain) VALUES('${domain}');`);
+      for (const m of monitored) {
+        statements.push(
+          `INSERT INTO monitored_domains(domain) VALUES('${esc(m.domain)}');`
+        );
       }
-      for (const h of obj.visit_history || []) {
-        const id = String(h.id).replaceAll("'", "''");
-        const url = String(h.url || '').replaceAll("'", "''");
-        const title = String(h.title || '').replaceAll("'", "''");
-        const domain = String(h.domain || '').replaceAll("'", "''");
+      for (const h of visitHistory) {
         const ts = Number(h.timestamp) || Date.now();
-        await db.run(
-          `INSERT INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`
+        statements.push(
+          `INSERT INTO visit_history(id,url,title,domain,timestamp) VALUES('${esc(h.id)}','${esc(h.url)}','${esc(h.title)}','${esc(h.domain)}', ${ts});`
         );
       }
-      // await db.run('COMMIT;');
+      statements.push('COMMIT;');
+      await db.run(statements.join('\n'));
       if (status) status.textContent = 'Database restored (refreshing UI)...';
-      // refresh UI
       loadFoldersUI();
       loadMonitoredDomainsUI();
     } catch (e) {
-      console.error('Restore failed', e);
-      // await db.run('ROLLBACK;');
+      try {
+        await db.run('ROLLBACK;');
+      } catch (rollbackError) {
+        console.warn('Restore rollback failed', rollbackError);
+      }
       throw e;
     }
   } catch (e) {
