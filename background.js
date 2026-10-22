@@ -232,12 +232,28 @@ async function getTabTitleForUrl(url) {
   return '';
 }
 
+async function isMigrationComplete() {
+  try {
+    const rows = await exec(
+      `SELECT v FROM settings WHERE k = 'db_migrated_v1' LIMIT 1;`
+    );
+    return (rows || []).some((b) => Array.isArray(b.rows) && b.rows.length > 0);
+  } catch (e) {
+    return false;
+  }
+}
+
 // Migrate from chrome.storage.local into SQLite tables. Runs once.
 async function migrateLocalStorageToSQLite() {
   try {
     console.log('Starting localStorage -> SQLite migration');
     await createSchema();
     console.log('end createSchema()');
+
+    if (await isMigrationComplete()) {
+      console.log('Migration flag found; skipping migration');
+      return;
+    }
 
     const keys = await new Promise((r) =>
       chrome.storage.local.get(
@@ -249,16 +265,11 @@ async function migrateLocalStorageToSQLite() {
           'visitHistory',
           'privateNextId',
           'privateFolderNextId',
-          'db_migrated_v1',
         ],
         r
       )
     );
     console.log('local keys - ', keys);
-    if (keys.db_migrated_v1) {
-      console.log('Migration flag found; skipping migration');
-      return;
-    }
 
     // Migrate settings/password and next ids
     if (keys.passwordHash) {
@@ -325,8 +336,23 @@ async function migrateLocalStorageToSQLite() {
       );
     }
 
-    // set migrated flag in settings table so we won't re-run
+    // Set the flag in SQLite and remove legacy data so it cannot be re-imported.
     await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('db_migrated_v1','true');`);
+    await new Promise((r) =>
+      chrome.storage.local.remove(
+        [
+          'privateBookmarks',
+          'privateFolders',
+          'passwordHash',
+          'monitoredDomains',
+          'visitHistory',
+          'privateNextId',
+          'privateFolderNextId',
+          'db_migrated_v1',
+        ],
+        r
+      )
+    );
     console.log('Migration completed successfully');
   } catch (e) {
     console.error('Migration failed', e);
