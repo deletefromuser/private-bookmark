@@ -23,8 +23,8 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - Pages: `popup.*` (add/monitor/open), `view.*` (password-protected bookmarks), `options.*` (settings, folders, import/export, backup), `history.*` (visit history), `sql.*` (SQL console opened from Options).
 - `shared.js` must load before page scripts; it provides `AppUtils` escaping, URL safety, destructive SQL detection, PBKDF2 password functions, and `authenticate`.
 - `modal.js` must load before page scripts; it provides async `_modal.showConfirm` / `showTextPrompt` used everywhere.
-- Schema and indexes are defined only in `createSchema()` in `background.js`; there are no migration files. Updates to schema must be added there.
-- Legacy `chrome.storage.local` data is migrated automatically when the worker starts. The `db_migrated_v1` setting in the SQLite `settings` table is checked before schema creation, so completed installs skip the migration path.
+- Schema and indexes are defined in `createSchema()` in `background.js`. Schema upgrades use `PRAGMA user_version` and the `SCHEMA_VERSION` constant; add a version-gated migration block when changing the schema.
+- Legacy `chrome.storage.local` data is migrated automatically when the worker starts. The `db_migrated_v1` setting in the SQLite `settings` table is checked before importing legacy data, so completed installs skip that work.
 
 ## Data and SQL
 - Real table is `visit_history` (snake_case): `id, url, title, domain, timestamp`. The `bookmarks` table uses `folderId` camelCase.

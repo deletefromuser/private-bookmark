@@ -81,6 +81,7 @@ Development
 - Lint: `npm run lint` (ESLint).
 - Format: `npm run format` or check with `npm run format:check` (Prettier).
 - CI runs tests, lint, and the production build on pushes and pull requests.
+- Schema changes are versioned with `PRAGMA user_version` and `SCHEMA_VERSION` in `background.js`.
 
 Testing checklist
 -----------------

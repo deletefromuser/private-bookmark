@@ -197,23 +197,40 @@ chrome.runtime.onSuspend?.addListener(() => {
   closeDatabase();
 });
 
-// Create DB schema if not present
-async function createSchema() {
-  const stmts = [
-    `PRAGMA journal_mode = WAL;`,
-    `CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);`,
-    `CREATE TABLE IF NOT EXISTS folders(id TEXT PRIMARY KEY, name TEXT);`,
-    `CREATE TABLE IF NOT EXISTS bookmarks(id TEXT PRIMARY KEY, title TEXT, url TEXT, folderId TEXT, added INTEGER);`,
-    `CREATE INDEX IF NOT EXISTS idx_bookmarks_url ON bookmarks(url);`,
-    `CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folderId);`,
-    `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY);`,
-    `CREATE TABLE IF NOT EXISTS visit_history(id TEXT PRIMARY KEY, url TEXT, title TEXT, domain TEXT, timestamp INTEGER);`,
-    `CREATE INDEX IF NOT EXISTS idx_history_domain ON visit_history(domain);`,
-    `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp)`,
-  ];
-  for (const s of stmts) {
-    await exec(s);
+const SCHEMA_VERSION = 1;
+
+async function getSchemaVersion() {
+  const blocks = await exec('PRAGMA user_version;');
+  for (const block of blocks || []) {
+    for (const row of block.rows || []) {
+      const version = Number(row[0]);
+      if (Number.isInteger(version)) return version;
+    }
   }
+  return 0;
+}
+
+// Create or upgrade the DB schema.
+async function createSchema() {
+  const version = await getSchemaVersion();
+  if (version >= SCHEMA_VERSION) return;
+
+  if (version < 1) {
+    await execBatches([
+      `PRAGMA journal_mode = WAL;`,
+      `CREATE TABLE IF NOT EXISTS settings(k TEXT PRIMARY KEY, v TEXT);`,
+      `CREATE TABLE IF NOT EXISTS folders(id TEXT PRIMARY KEY, name TEXT);`,
+      `CREATE TABLE IF NOT EXISTS bookmarks(id TEXT PRIMARY KEY, title TEXT, url TEXT, folderId TEXT, added INTEGER);`,
+      `CREATE INDEX IF NOT EXISTS idx_bookmarks_url ON bookmarks(url);`,
+      `CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folderId);`,
+      `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY);`,
+      `CREATE TABLE IF NOT EXISTS visit_history(id TEXT PRIMARY KEY, url TEXT, title TEXT, domain TEXT, timestamp INTEGER);`,
+      `CREATE INDEX IF NOT EXISTS idx_history_domain ON visit_history(domain);`,
+      `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp);`,
+    ]);
+  }
+
+  await exec(`PRAGMA user_version = ${SCHEMA_VERSION};`);
 }
 
 function esc(v) {
@@ -280,11 +297,9 @@ async function isMigrationComplete() {
 // Migrate from chrome.storage.local into SQLite tables. Runs once.
 async function migrateLocalStorageToSQLite() {
   try {
-    if (await isMigrationComplete()) {
-      return;
-    }
-
+    const migrated = await isMigrationComplete();
     await createSchema();
+    if (migrated) return;
 
     const keys = await new Promise((r) =>
       chrome.storage.local.get(
