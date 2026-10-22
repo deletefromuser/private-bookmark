@@ -227,6 +227,12 @@ function esc(v) {
   return String(v).replaceAll("'", "''");
 }
 
+async function execBatches(statements, batchSize = 100) {
+  for (let i = 0; i < statements.length; i += batchSize) {
+    await exec(statements.slice(i, i + batchSize).join('\n'));
+  }
+}
+
 // helper: check if domain is in monitored_domains table
 async function isDomainMonitored(domain) {
   try {
@@ -320,44 +326,49 @@ async function migrateLocalStorageToSQLite() {
 
     // folders
     const folders = Array.isArray(keys.privateFolders) ? keys.privateFolders : [];
-    for (const f of folders) {
-      const id = esc(f.id);
-      const name = esc(f.name || '');
-      await exec(`INSERT OR REPLACE INTO folders(id,name) VALUES('${id}','${name}');`);
-    }
+    await execBatches(
+      folders.map((f) => {
+        const id = esc(f.id);
+        const name = esc(f.name || '');
+        return `INSERT OR REPLACE INTO folders(id,name) VALUES('${id}','${name}');`;
+      })
+    );
 
     // bookmarks
     const bms = Array.isArray(keys.privateBookmarks) ? keys.privateBookmarks : [];
-    for (const b of bms) {
-      const id = esc(b.id);
-      const title = esc(b.title || '');
-      const url = esc(b.url || '');
-      const folderId = esc(b.folderId || '1');
-      const added = Number(b.added) || Date.now();
-      await exec(
-        `INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`
-      );
-    }
+    await execBatches(
+      bms.map((b) => {
+        const id = esc(b.id);
+        const title = esc(b.title || '');
+        const url = esc(b.url || '');
+        const folderId = esc(b.folderId || '1');
+        const added = Number(b.added) || Date.now();
+        return `INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${id}','${title}','${url}','${folderId}', ${added});`;
+      })
+    );
 
     // monitored domains
     const mons = Array.isArray(keys.monitoredDomains) ? keys.monitoredDomains : [];
-    for (const d of mons) {
-      await exec(`INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${esc(d)}');`);
-    }
+    await execBatches(
+      mons.map(
+        (d) => `INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${esc(d)}');`
+      )
+    );
 
     // visit history
     const hist = Array.isArray(keys.visitHistory) ? keys.visitHistory : [];
-    for (const h of hist) {
-      const id =
-        esc(h.id || (String(Date.now()) + Math.random().toString(36).slice(2, 8)));
-      const url = esc(h.url || '');
-      const title = esc(h.title || '');
-      const domain = esc(h.domain || '');
-      const ts = Number(h.timestamp) || Date.now();
-      await exec(
-        `INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`
-      );
-    }
+    await execBatches(
+      hist.map((h) => {
+        const id = esc(
+          h.id || String(Date.now()) + Math.random().toString(36).slice(2, 8)
+        );
+        const url = esc(h.url || '');
+        const title = esc(h.title || '');
+        const domain = esc(h.domain || '');
+        const ts = Number(h.timestamp) || Date.now();
+        return `INSERT OR REPLACE INTO visit_history(id,url,title,domain,timestamp) VALUES('${id}','${url}','${title}','${domain}', ${ts});`;
+      })
+    );
 
     // Set the flag in SQLite and remove legacy data so it cannot be re-imported.
     await exec(`INSERT OR REPLACE INTO settings(k,v) VALUES('db_migrated_v1','true');`);

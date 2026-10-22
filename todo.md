@@ -16,7 +16,7 @@
 - [x] **Reuse one SQLite connection.** `background.js:148-168` reloads the WASM module, creates a VFS, opens the DB, and never closes it for every message. Use a singleton connection plus a query queue, and close on shutdown.
 - [x] **Check the migration flag before `createSchema()`.** `background.js:236-258` runs ~10 full SQLite initializations on every worker wake before deciding migration is unnecessary.
 - [x] **Use real SQLite parameter binding.** `background.js:107-135` and `db.js:29-54` naively replace `?` placeholders in order; `?` inside literals or search values breaks queries, and `null` becomes `''`. `wa-sqlite` exposes real bind APIs.
-- [ ] **Batch import/restore/migration writes.** `options.js:221-260` and `background.js:286-326` send one worker message per row; each message reopens SQLite. Use one transaction/batch.
+- [x] **Batch import/restore/migration writes.** `options.js:221-260` and `background.js:286-326` send one worker message per row; each message reopens SQLite. Use one transaction/batch.
 - [ ] **Fix folder move bug.** `view.js:159` appends a trailing space to `folderId`, so moved bookmarks disappear from folder grouping.
 - [ ] **Fix manifest version.** `20260102` exceeds Chrome's documented 0–65535 per-part limit. Use a dotted date such as `2026.10.22` and add `version_name`.
 - [ ] **Handle runtime messaging failures.** `db.js:6-53` ignores `chrome.runtime.lastError`, so promises can hang if the worker is unavailable.

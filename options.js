@@ -275,7 +275,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
         );
       }
       statements.push('COMMIT;');
-      await db.run(statements.join('\n'));
+      await db.runBatch(statements);
       if (status) status.textContent = 'Database restored (refreshing UI)...';
       loadFoldersUI();
       loadMonitoredDomainsUI();
@@ -477,12 +477,14 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
     const chromeFolderName = root.title || 'Imported';
     // create a new folder and add bookmarks into it
     const folder = await db.addFolder({ name: chromeFolderName });
-    let addedCount = 0;
-    for (const b of collected) {
-      const added = b.dateAdded ? Number(b.dateAdded) : Date.now();
-      await db.addBookmark({ title: b.title, url: b.url, folderId: folder.id, added });
-      addedCount++;
-    }
+    await db.addBookmarks(
+      collected.map((b) => ({
+        title: b.title,
+        url: b.url,
+        folderId: folder.id,
+        added: b.dateAdded ? Number(b.dateAdded) : Date.now(),
+      }))
+    );
     if (statusEl) statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
     await loadFoldersUI();
     await loadChromeFoldersIntoSelect();

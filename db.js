@@ -57,11 +57,17 @@ const db = (function () {
     await rawQuery(sql);
   }
 
+  async function runBatch(statements) {
+    const sql = (statements || []).filter(Boolean).join('\n');
+    if (sql.trim()) await rawQuery(sql);
+  }
+
   // Convenience methods
   return {
     query: rawQuery,
     queryWithParams: rawQueryWithParams,
     run,
+    runBatch,
     async getPasswordHash() {
       const result = await rawQuery(`SELECT v FROM settings WHERE k = 'passwordHash';`);
       if (result && result.length > 0) {
@@ -106,6 +112,29 @@ const db = (function () {
         `INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${iid}','${t}','${u}','${f}', ${a});`
       );
       return { id: iid, title, url, folderId: f, added: a };
+    },
+    async addBookmarks(items) {
+      const statements = ['BEGIN;'];
+      const inserted = [];
+      for (const item of items || []) {
+        const iid =
+          item.id || String(Date.now()) + Math.random().toString(36).slice(2, 8);
+        const title = item.title || '';
+        const url = item.url || '';
+        const folderId = item.folderId || '1';
+        const added = Number(item.added) || Date.now();
+        const iidEsc = String(iid).replaceAll("'", "''");
+        const t = String(title).replaceAll("'", "''");
+        const u = String(url).replaceAll("'", "''");
+        const f = String(folderId).replaceAll("'", "''");
+        statements.push(
+          `INSERT OR REPLACE INTO bookmarks(id,title,url,folderId,added) VALUES('${iidEsc}','${t}','${u}','${f}', ${added});`
+        );
+        inserted.push({ id: iid, title, url, folderId, added });
+      }
+      statements.push('COMMIT;');
+      await runBatch(statements);
+      return inserted;
     },
     async findBookmarkByUrl(url) {
       const u = (url || '').replaceAll("'", "''");
