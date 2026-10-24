@@ -41,8 +41,8 @@ test('normalizes supported and unsupported languages', () => {
 });
 
 test('translates and interpolates catalog messages', () => {
-  assert.equal(I18n.translate('ja', 'popup.add'), '追加');
-  assert.equal(I18n.translate('zh-CN', 'popup.add'), '添加');
+  assert.equal(I18n.translate('ja', 'add.add'), '追加');
+  assert.equal(I18n.translate('zh-CN', 'add.add'), '添加');
   assert.equal(
     I18n.translate('zh-CN', 'common.pageInfo', { start: 1, end: 20, total: 100 }),
     '第 1-20 条，共 100 条'
@@ -58,7 +58,7 @@ test('translates and interpolates catalog messages', () => {
 });
 
 test('falls back to English for unsupported languages and missing variables', () => {
-  assert.equal(I18n.translate('fr', 'popup.add'), 'Add');
+  assert.equal(I18n.translate('fr', 'add.add'), 'Add');
   assert.equal(I18n.translate('ja', 'missing.key'), 'missing.key');
   assert.equal(
     I18n.translate('en', 'common.pageInfo', { start: 1, end: 20 }),

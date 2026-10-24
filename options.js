@@ -296,6 +296,15 @@ document.getElementById('open-sql-console')?.addEventListener('click', () => {
   }
 });
 
+// Open Add Bookmark page in a new tab
+document.getElementById('open-add-page')?.addEventListener('click', () => {
+  try {
+    window.open('add.html', '_blank');
+  } catch (e) {
+    console.warn('Open add page failed', e);
+  }
+});
+
 // Open visit history viewer moved to popup
 
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {

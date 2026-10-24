@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="add.title">Add Bookmark</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="i18n.js"></script>
+    <script src="shared.js"></script>
+  </head>
+
+  <body class="popup-page">
+    <h1 data-i18n="add.heading">Add Bookmark</h1>
+
+    <section id="add-section">
+      <input
+        id="title"
+        placeholder="Title"
+        class="form-control mb-2"
+        data-i18n-placeholder="add.titlePlaceholder"
+      />
+      <input
+        id="url"
+        placeholder="URL"
+        class="form-control mb-2"
+        data-i18n-placeholder="add.urlPlaceholder"
+      />
+      <select id="folder-select" class="form-select mb-2"></select>
+      <button id="add-bookmark" class="btn btn-success" data-i18n="add.add">
+        Add
+      </button>
+    </section>
+
+    <div
+      id="status"
+      aria-live="polite"
+      style="margin-top: 8px; color: var(--muted)"
+    ></div>
+
+    <section>
+      <button
+        id="open-view"
+        class="btn btn-primary me-2"
+        data-i18n="popup.openView"
+      >
+        Open View Page
+      </button>
+      <button
+        id="open-history-viewer"
+        class="btn btn-secondary ms-2"
+        data-i18n="popup.openHistory"
+      >
+        Open History Viewer
+      </button>
+    </section>
+
+    <script src="db.js"></script>
+    <script src="add.js"></script>
+  </body>
+</html>

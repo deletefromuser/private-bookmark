@@ -11,39 +11,16 @@
   <body class="popup-page">
     <h1 data-i18n="popup.heading">Private Bookmark</h1>
 
-    <section id="options-link">
-      <h2 data-i18n="popup.optionsHeading">Options</h2>
-      <p data-i18n="popup.optionsDescription">
-        Manage password and other settings in the Options page.
-      </p>
-      <button
-        id="open-options"
-        class="btn btn-outline-secondary me-2"
-        data-i18n="popup.openOptions"
-      >
-        Open Options
-      </button>
-    </section>
+    <div
+      id="status"
+      aria-live="polite"
+      style="margin-top: 8px; color: var(--muted)"
+    ></div>
 
-    <section id="add-section">
-      <h2 data-i18n="popup.addHeading">Add Bookmark</h2>
-      <input
-        id="title"
-        placeholder="Title"
-        class="form-control mb-2"
-        data-i18n-placeholder="popup.titlePlaceholder"
-      />
-      <input
-        id="url"
-        placeholder="URL"
-        class="form-control mb-2"
-        data-i18n-placeholder="popup.urlPlaceholder"
-      />
-      <select id="folder-select" class="form-select mb-2"></select>
-      <button id="add-bookmark" class="btn btn-success me-2" data-i18n="popup.add">
-        Add
-      </button>
-      <button id="add-current" class="btn btn-info" data-i18n="popup.addCurrent">
+    <section id="add-current-section">
+      <label id="add-current-folder-label" class="form-label mb-1" data-i18n="add.addCurrentFolder">Folder:</label>
+      <select id="add-current-folder-select" class="form-select form-select-sm mb-2"></select>
+      <button id="add-current" class="btn btn-info me-2" data-i18n="popup.addCurrent">
         Add Current Tab
       </button>
       <button
@@ -54,12 +31,6 @@
         Monitor Current Domain
       </button>
     </section>
-
-    <div
-      id="status"
-      aria-live="polite"
-      style="margin-top: 8px; color: var(--muted)"
-    ></div>
 
     <!-- Bookmark list removed from popup (moved to view.html) -->
 

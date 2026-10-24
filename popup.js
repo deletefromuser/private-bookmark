@@ -1,21 +1,13 @@
 const tr = (key, vars) => globalThis.I18n.t(key, vars);
 
-async function addBookmark(title, url, folderId) {
-  if (!url) return alert(tr('popup.urlRequired'));
-  if (globalThis.AppUtils.safeUrl(url) === '#') {
-    return alert(tr('popup.onlyHttp'));
-  }
-  return await globalThis.db.addBookmark({
-    title: title || url,
-    url,
-    folderId: folderId || '1',
-    added: Date.now(),
-  });
+async function isUrlBookmarked(url) {
+  if (!url) return false;
+  const found = await globalThis.db.findBookmarkByUrl(url);
+  return !!found;
 }
 
-// load folders into the popup select (db-backed)
-async function loadFoldersIntoSelect() {
-  const sel = document.getElementById('folder-select');
+async function loadFoldersIntoAddCurrentSelect() {
+  const sel = document.getElementById('add-current-folder-select');
   if (!sel) return;
   sel.innerHTML = '';
   const folders = await globalThis.db.getFolders();
@@ -26,12 +18,6 @@ async function loadFoldersIntoSelect() {
     opt.textContent = f.name;
     sel.appendChild(opt);
   }
-}
-
-async function isUrlBookmarked(url) {
-  if (!url) return false;
-  const found = await globalThis.db.findBookmarkByUrl(url);
-  return !!found;
 }
 
 async function updateCurrentTabState() {
@@ -70,52 +56,27 @@ async function addCurrentTab() {
   );
   if (!tabs || tabs.length === 0) return;
   const t = tabs[0];
-  const addBtn = document.getElementById('add-bookmark');
   const addCurrentBtn = document.getElementById('add-current');
-  addBtn.disabled = true;
   addCurrentBtn.disabled = true;
   try {
-    const sel = document.getElementById('folder-select');
+    const sel = document.getElementById('add-current-folder-select');
     const folderId = sel ? sel.value : undefined;
-    await addBookmark(t.title, t.url, folderId);
+    await globalThis.db.addBookmark({
+      title: t.title || t.url,
+      url: t.url,
+      folderId: folderId || '1',
+      added: Date.now(),
+    });
     showStatus(tr('popup.bookmarkAdded'));
   } catch (err) {
     console.warn('Add current failed', err);
   } finally {
-    addBtn.disabled = false;
     addCurrentBtn.disabled = false;
     updateCurrentTabState();
   }
 }
 
-// Password UI moved to Options page; provide helper to open it from popup
-document.getElementById('open-options')?.addEventListener('click', () => {
-  if (chrome.runtime.openOptionsPage) chrome.runtime.openOptionsPage();
-  else chrome.tabs.create({ url: chrome.runtime.getURL('options.html') });
-});
-
 // bookmark list UI removed from popup; edit/delete handled in view.html
-
-document.getElementById('add-bookmark').addEventListener('click', () => {
-  const title = document.getElementById('title').value;
-  const url = document.getElementById('url').value;
-  if (!url) return alert(tr('popup.urlRequired'));
-  const addBtn = document.getElementById('add-bookmark');
-  const addCurrentBtn = document.getElementById('add-current');
-  addBtn.disabled = true;
-  addCurrentBtn.disabled = true;
-  const folderId = document.getElementById('folder-select')?.value;
-  addBookmark(title, url, folderId)
-    .then(() => showStatus(tr('popup.bookmarkAdded')))
-    .catch((err) => console.warn('Add failed', err))
-    .finally(() => {
-      addBtn.disabled = false;
-      addCurrentBtn.disabled = false;
-      updateCurrentTabState();
-    });
-  document.getElementById('title').value = '';
-  document.getElementById('url').value = '';
-});
 
 document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
@@ -141,8 +102,6 @@ document.getElementById('open-history-viewer')?.addEventListener('click', async 
   chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
 });
 
-// initial: popup only provides add/current/options/view functionality
-
 // small status helper
 function showStatus(msg, timeout = 2500) {
   const el = document.getElementById('status');
@@ -157,8 +116,7 @@ function showStatus(msg, timeout = 2500) {
 updateCurrentTabState().catch(() => {
   /* non-fatal */
 });
-// load folders for folder select
-loadFoldersIntoSelect().catch(() => {
+// load folders for add-current folder select
+loadFoldersIntoAddCurrentSelect().catch(() => {
   /* non-fatal */
 });
-// (showStatus is defined above)
