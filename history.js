@@ -1,3 +1,5 @@
+const tr = (key, vars) => globalThis.I18n.t(key, vars);
+
 async function loadHistory() {
   // pagination params
   const pageSize = (globalThis.__hist_page_size = globalThis.__hist_page_size || 20);
@@ -52,7 +54,7 @@ async function loadHistory() {
   if (list.length === 0) {
     const p = document.createElement('p');
     p.className = 'text-muted';
-    p.textContent = '(no visits recorded yet)';
+    p.textContent = tr('history.noVisits');
     container.appendChild(p);
     updateHistPageInfo(pageIndex, pageSize, 0);
     return;
@@ -74,17 +76,15 @@ async function loadHistory() {
     left.appendChild(title);
     const small = document.createElement('div');
     small.className = 'small text-muted';
-    small.textContent = `${e.domain} — ${new Date(e.timestamp).toLocaleString()}`;
+    small.textContent = `${e.domain} — ${new Date(e.timestamp).toLocaleString(globalThis.I18n.getLanguage())}`;
     left.appendChild(small);
     li.appendChild(left);
     // delete button
     const delBtn = document.createElement('button');
     delBtn.className = 'btn btn-sm btn-danger ms-2';
-    delBtn.textContent = 'Delete';
+    delBtn.textContent = tr('common.delete');
     delBtn.addEventListener('click', async () => {
-      const ok = await globalThis._modal.showConfirm(
-        'Delete this history entry? This cannot be undone.'
-      );
+      const ok = await globalThis._modal.showConfirm(tr('history.confirmDeleteEntry'));
       if (!ok) return;
       try {
         await globalThis.db.deleteHistory(e.id);
@@ -108,7 +108,7 @@ async function loadHistory() {
 function updateHistPageInfo(pageIndex, pageSize, total) {
   const info = document.getElementById('hist-page-info');
   const page = globalThis.AppUtils.getPageInfo(pageIndex, pageSize, total);
-  if (info) info.textContent = `${page.start}-${page.end} of ${page.total}`;
+  if (info) info.textContent = tr('common.pageInfo', page);
   const prev = document.getElementById('hist-prev');
   const next = document.getElementById('hist-next');
   if (prev) prev.disabled = !page.hasPrev;

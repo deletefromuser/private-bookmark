@@ -1,31 +1,56 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Private Bookmark</title>
+    <title data-i18n="popup.title">Private Bookmark</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="i18n.js"></script>
   </head>
 
   <body class="popup-page">
-    <h1>Private Bookmark</h1>
+    <h1 data-i18n="popup.heading">Private Bookmark</h1>
 
     <section id="options-link">
-      <h2>Options</h2>
-      <p>Manage password and other settings in the Options page.</p>
-      <button id="open-options" class="btn btn-outline-secondary me-2">
+      <h2 data-i18n="popup.optionsHeading">Options</h2>
+      <p data-i18n="popup.optionsDescription">
+        Manage password and other settings in the Options page.
+      </p>
+      <button
+        id="open-options"
+        class="btn btn-outline-secondary me-2"
+        data-i18n="popup.openOptions"
+      >
         Open Options
       </button>
     </section>
 
     <section id="add-section">
-      <h2>Add Bookmark</h2>
-      <input id="title" placeholder="Title" class="form-control mb-2" />
-      <input id="url" placeholder="URL" class="form-control mb-2" />
+      <h2 data-i18n="popup.addHeading">Add Bookmark</h2>
+      <input
+        id="title"
+        placeholder="Title"
+        class="form-control mb-2"
+        data-i18n-placeholder="popup.titlePlaceholder"
+      />
+      <input
+        id="url"
+        placeholder="URL"
+        class="form-control mb-2"
+        data-i18n-placeholder="popup.urlPlaceholder"
+      />
       <select id="folder-select" class="form-select mb-2"></select>
-      <button id="add-bookmark" class="btn btn-success me-2">Add</button>
-      <button id="add-current" class="btn btn-info">Add Current Tab</button>
-      <button id="add-current-domain" class="btn btn-outline-secondary ms-2">
+      <button id="add-bookmark" class="btn btn-success me-2" data-i18n="popup.add">
+        Add
+      </button>
+      <button id="add-current" class="btn btn-info" data-i18n="popup.addCurrent">
+        Add Current Tab
+      </button>
+      <button
+        id="add-current-domain"
+        class="btn btn-outline-secondary ms-2"
+        data-i18n="popup.monitorDomain"
+      >
         Monitor Current Domain
       </button>
     </section>
@@ -39,8 +64,14 @@
     <!-- Bookmark list removed from popup (moved to view.html) -->
 
     <section>
-      <button id="open-view" class="btn btn-primary me-2">Open View Page</button>
-      <button id="open-history-viewer" class="btn btn-secondary ms-2">
+      <button id="open-view" class="btn btn-primary me-2" data-i18n="popup.openView">
+        Open View Page
+      </button>
+      <button
+        id="open-history-viewer"
+        class="btn btn-secondary ms-2"
+        data-i18n="popup.openHistory"
+      >
         Open History Viewer
       </button>
     </section>

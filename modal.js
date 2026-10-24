@@ -1,5 +1,7 @@
 // Simple in-page modal helpers returning Promises
 (function () {
+  const tr = (key) => globalThis.I18n.t(key);
+
   function createModal() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -21,9 +23,9 @@
       modal.querySelector('.modal-content').textContent = message;
       const actions = modal.querySelector('.modal-actions');
       const ok = document.createElement('button');
-      ok.textContent = 'OK';
+      ok.textContent = tr('common.ok');
       const cancel = document.createElement('button');
-      cancel.textContent = 'Cancel';
+      cancel.textContent = tr('common.cancel');
       actions.appendChild(ok);
       actions.appendChild(cancel);
       ok.focus();
@@ -50,9 +52,9 @@
       content.appendChild(input);
       const actions = modal.querySelector('.modal-actions');
       const ok = document.createElement('button');
-      ok.textContent = 'OK';
+      ok.textContent = tr('common.ok');
       const cancel = document.createElement('button');
-      cancel.textContent = 'Cancel';
+      cancel.textContent = tr('common.cancel');
       actions.appendChild(ok);
       actions.appendChild(cancel);
       input.focus();

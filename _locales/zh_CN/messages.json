@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "私密书签"
+  },
+  "extDescription": {
+    "message": "添加、编辑、删除和查看私密书签。查看页面受密码保护。可选历史记录监控。"
+  },
+  "actionTitle": {
+    "message": "私密书签"
+  }
+}

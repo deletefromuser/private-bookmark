@@ -1,3 +1,5 @@
+const tr = (key, vars) => globalThis.I18n.t(key, vars);
+
 function showUnlockError(msg) {
   const authMsg = document.getElementById('auth-msg');
   if (!authMsg) return;
@@ -10,7 +12,7 @@ function showUnlockError(msg) {
 
 async function loadBookmarks() {
   const listEl = document.getElementById('bookmarks-list');
-  listEl.textContent = 'Loading...';
+  listEl.textContent = tr('common.loading');
   // pagination params
   const pageSize = (window.__bm_page_size = window.__bm_page_size || 20);
   const pageIndex = (window.__bm_page_index = window.__bm_page_index || 0); // zero-based
@@ -31,7 +33,8 @@ async function loadBookmarks() {
 
   listEl.innerHTML = '';
   if (!nodes || nodes.length === 0) {
-    listEl.textContent = total > 0 ? 'No bookmarks on this page' : 'No bookmarks';
+    listEl.textContent =
+      total > 0 ? tr('view.noBookmarksOnPage') : tr('view.noBookmarks');
     updateBmPageInfo(pageIndex, pageSize, total);
     return;
   }
@@ -56,13 +59,15 @@ async function loadBookmarks() {
         )
         .join('') +
       `</select>`;
-    const added = n.added ? new Date(Number(n.added)).toLocaleString() : '';
+    const added = n.added
+      ? new Date(Number(n.added)).toLocaleString(globalThis.I18n.getLanguage())
+      : '';
     const addedHtml = added ? `<span class="bm-added">${escapeHtml(added)}</span>` : '';
     const title = n.title || n.url;
     row.innerHTML = `<a class="bm-link" href="${escapeHtml(safeUrl(n.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a> ${addedHtml}
       ${folderSelectHtml}
-      <button data-id="${bookmarkId}" class="edit btn btn-primary me-2">Edit</button>
-      <button data-id="${bookmarkId}" class="del btn btn-danger me-2">Delete</button><hr>`;
+      <button data-id="${bookmarkId}" class="edit btn btn-primary me-2">${tr('common.edit')}</button>
+      <button data-id="${bookmarkId}" class="del btn btn-danger me-2">${tr('common.delete')}</button><hr>`;
     listEl.appendChild(row);
   });
 
@@ -72,7 +77,7 @@ async function loadBookmarks() {
 function updateBmPageInfo(pageIndex, pageSize, total) {
   const info = document.getElementById('bm-page-info');
   const page = globalThis.AppUtils.getPageInfo(pageIndex, pageSize, total);
-  if (info) info.textContent = `${page.start}-${page.end} of ${page.total}`;
+  if (info) info.textContent = tr('common.pageInfo', page);
   // toggle prev/next
   const prev = document.getElementById('bm-prev');
   const next = document.getElementById('bm-next');
@@ -91,7 +96,7 @@ document.getElementById('refresh-bookmarks')?.addEventListener('click', () => {
 
 // Delete all bookmarks handler
 document.getElementById('delete-all-bookmarks')?.addEventListener('click', async () => {
-  const ok = await _modal.showConfirm('Delete ALL bookmarks? This cannot be undone.');
+  const ok = await _modal.showConfirm(tr('view.confirmDeleteAll'));
   if (!ok) return;
   try {
     await window.db.run('DELETE FROM bookmarks;');
@@ -99,7 +104,7 @@ document.getElementById('delete-all-bookmarks')?.addEventListener('click', async
     loadBookmarks();
   } catch (e) {
     console.warn('Failed to delete all bookmarks', e);
-    alert('Failed to delete bookmarks');
+    alert(tr('view.deleteAllFailed'));
   }
 });
 
@@ -122,16 +127,16 @@ document.getElementById('bookmarks-list').addEventListener('click', (e) => {
   if (!id) return;
   if (e.target.classList.contains('del')) {
     // non-blocking confirm
-    _modal.showConfirm('Delete bookmark?').then(async (ok) => {
+    _modal.showConfirm(tr('view.confirmDelete')).then(async (ok) => {
       if (!ok) return;
       await window.db.deleteBookmark(id);
       loadBookmarks();
     });
   } else if (e.target.classList.contains('edit')) {
     (async () => {
-      const newTitle = await _modal.showTextPrompt('New title', '');
+      const newTitle = await _modal.showTextPrompt(tr('view.newTitlePrompt'), '');
       if (newTitle === null) return; // cancelled
-      const newUrl = await _modal.showTextPrompt('New URL (leave blank to keep)', '');
+      const newUrl = await _modal.showTextPrompt(tr('view.newUrlPrompt'), '');
       // update via SQL
       try {
         const t = (newTitle || '').replace(/'/g, "''");
@@ -180,9 +185,9 @@ document.getElementById('bm-next')?.addEventListener('click', () => {
   const stored = await globalThis.db.getPasswordHash();
   const authMsg = document.getElementById('auth-msg');
   if (!stored) {
-    authMsg.textContent = 'No password set — click Unlock to view.';
+    authMsg.textContent = tr('view.authNoPassword');
   } else {
-    authMsg.textContent = 'Enter password to view.';
+    authMsg.textContent = tr('auth.enterPassword');
   }
   // focus password input for quick typing
   const pwInput = document.getElementById('pw');

@@ -21,9 +21,19 @@ const db = (function () {
           if (runtimeError) {
             return reject(new Error(runtimeError.message));
           }
-          if (!resp) return reject(new Error('No response from background'));
+          if (!resp) {
+            return reject(
+              new Error(
+                globalThis.I18n?.t('db.noResponse') || 'No response from background'
+              )
+            );
+          }
           if (resp.status !== 'success') {
-            return reject(new Error(resp.message || 'Query failed'));
+            return reject(
+              new Error(
+                resp.message || globalThis.I18n?.t('db.queryFailed') || 'Query failed'
+              )
+            );
           }
           resolve(resp.data);
         });

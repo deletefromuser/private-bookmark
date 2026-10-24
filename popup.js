@@ -1,7 +1,9 @@
+const tr = (key, vars) => globalThis.I18n.t(key, vars);
+
 async function addBookmark(title, url, folderId) {
-  if (!url) return alert('URL required');
+  if (!url) return alert(tr('popup.urlRequired'));
   if (globalThis.AppUtils.safeUrl(url) === '#') {
-    return alert('Only http(s) URLs can be bookmarked');
+    return alert(tr('popup.onlyHttp'));
   }
   return await globalThis.db.addBookmark({
     title: title || url,
@@ -17,7 +19,7 @@ async function loadFoldersIntoSelect() {
   if (!sel) return;
   sel.innerHTML = '';
   const folders = await globalThis.db.getFolders();
-  const useFolders = folders || [{ id: '1', name: 'Default' }];
+  const useFolders = folders || [{ id: '1', name: tr('common.defaultFolder') }];
   for (const f of useFolders) {
     const opt = document.createElement('option');
     opt.value = f.id;
@@ -76,7 +78,7 @@ async function addCurrentTab() {
     const sel = document.getElementById('folder-select');
     const folderId = sel ? sel.value : undefined;
     await addBookmark(t.title, t.url, folderId);
-    showStatus('Bookmark added');
+    showStatus(tr('popup.bookmarkAdded'));
   } catch (err) {
     console.warn('Add current failed', err);
   } finally {
@@ -97,14 +99,14 @@ document.getElementById('open-options')?.addEventListener('click', () => {
 document.getElementById('add-bookmark').addEventListener('click', () => {
   const title = document.getElementById('title').value;
   const url = document.getElementById('url').value;
-  if (!url) return alert('URL required');
+  if (!url) return alert(tr('popup.urlRequired'));
   const addBtn = document.getElementById('add-bookmark');
   const addCurrentBtn = document.getElementById('add-current');
   addBtn.disabled = true;
   addCurrentBtn.disabled = true;
   const folderId = document.getElementById('folder-select')?.value;
   addBookmark(title, url, folderId)
-    .then(() => showStatus('Bookmark added'))
+    .then(() => showStatus(tr('popup.bookmarkAdded')))
     .catch((err) => console.warn('Add failed', err))
     .finally(() => {
       addBtn.disabled = false;
@@ -119,15 +121,15 @@ document.getElementById('add-current').addEventListener('click', addCurrentTab);
 
 document.getElementById('add-current-domain')?.addEventListener('click', async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.url) return showStatus('No active tab URL');
+  if (!tab || !tab.url) return showStatus(tr('popup.noActiveTabUrl'));
   const url = new URL(tab.url);
   const domain = url.hostname.replace(/^www\./, '');
   const list = await globalThis.db.getMonitoredDomains();
   if (list.includes(domain)) {
-    showStatus('Domain is already monitored');
+    showStatus(tr('popup.domainAlreadyMonitored'));
   } else {
     await globalThis.db.addMonitoredDomain(domain);
-    showStatus('Domain added to monitored list');
+    showStatus(tr('popup.domainAdded'));
   }
 });
 

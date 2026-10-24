@@ -1,47 +1,59 @@
+const tr = (key, vars) => globalThis.I18n.t(key, vars);
+
+const languageSelect = document.getElementById('ui-language');
+if (languageSelect) {
+  languageSelect.value = globalThis.I18n.getPreference();
+  languageSelect.addEventListener('change', () => {
+    globalThis.I18n.setLanguage(languageSelect.value);
+    window.location.reload();
+  });
+}
+
 document.getElementById('set-password').addEventListener('click', async () => {
   const newPw = document.getElementById('new-password').value;
   if (!newPw) {
-    document.getElementById('status').textContent = 'Enter a password to set.';
+    document.getElementById('status').textContent = tr('options.enterPasswordToSet');
     return;
   }
   const passwordHash = await globalThis.db.getPasswordHash();
   if (passwordHash) {
     const current = await _modal.showTextPrompt(
-      'Enter current password to change it',
+      tr('options.currentPasswordChangePrompt'),
       ''
     );
     if (current == null) return; // cancelled
     const verification = await globalThis.AppUtils.verifyPassword(current, passwordHash);
     if (!verification.ok) {
-      document.getElementById('status').textContent =
-        'Current password incorrect. Change aborted.';
+      document.getElementById('status').textContent = tr(
+        'options.currentIncorrectChange'
+      );
       return;
     }
   }
   const hash = await globalThis.AppUtils.hashPassword(newPw);
   await globalThis.db.setPasswordHash(hash);
   document.getElementById('new-password').value = '';
-  document.getElementById('status').textContent = 'Password changed.';
+  document.getElementById('status').textContent = tr('options.passwordChanged');
 });
 
 document.getElementById('clear-password').addEventListener('click', async () => {
-  const confirmed = await _modal.showConfirm(
-    'Clear the password? This will allow anyone to open the View page without a password.'
-  );
+  const confirmed = await _modal.showConfirm(tr('options.confirmClearPassword'));
   if (!confirmed) return;
   const passwordHash = await globalThis.db.getPasswordHash();
   if (passwordHash) {
-    const current = await _modal.showTextPrompt('Enter current password to clear it', '');
+    const current = await _modal.showTextPrompt(
+      tr('options.currentPasswordClearPrompt'),
+      ''
+    );
     if (current == null) return; // cancelled
     const verification = await globalThis.AppUtils.verifyPassword(current, passwordHash);
     if (!verification.ok) {
-      document.getElementById('status').textContent =
-        'Current password incorrect. Clear aborted.';
+      document.getElementById('status').textContent = tr('options.currentIncorrectClear');
       return;
     }
   }
   await globalThis.db.deletePasswordHash();
-  document.getElementById('status').textContent = 'Password cleared.';
+  document.getElementById('status').textContent = tr('options.passwordCleared');
 });
 
 // Initialize status
@@ -51,9 +63,9 @@ document.getElementById('clear-password').addEventListener('click', async () => 
     const passwordHash = await globalThis.db.getPasswordHash();
     const status = document.getElementById('status');
     if (passwordHash) {
-      status.textContent = 'Password is set.';
+      status.textContent = tr('options.passwordIsSet');
     } else {
-      status.textContent = 'No password set.';
+      status.textContent = tr('options.noPasswordSet');
     }
   } catch (e) {
     console.debug('initOptionsStatus failed', e);
@@ -65,15 +77,17 @@ async function loadFoldersUI() {
   const el = document.getElementById('folders-list');
   if (!el) return;
   let folders = await db.getFolders();
-  if (!folders || folders.length === 0) folders = [{ id: '1', name: 'Default' }];
+  if (!folders || folders.length === 0) {
+    folders = [{ id: '1', name: tr('common.defaultFolder') }];
+  }
   const { escapeHtml } = globalThis.AppUtils;
   el.innerHTML = '';
   for (const f of folders) {
     const row = document.createElement('div');
     row.className = 'folder-row';
     row.innerHTML = `<span class="folder-name">${escapeHtml(f.name)}</span>
-      <button data-id="${escapeHtml(f.id)}" class="rename-folder btn btn-primary me-2">Rename</button>
-      <button data-id="${escapeHtml(f.id)}" class="delete-folder btn btn-danger me-2">Delete</button>`;
+      <button data-id="${escapeHtml(f.id)}" class="rename-folder btn btn-primary me-2">${tr('options.renameFolder')}</button>
+      <button data-id="${escapeHtml(f.id)}" class="delete-folder btn btn-danger me-2">${tr('options.deleteFolder')}</button>`;
     el.appendChild(row);
   }
 }
@@ -91,7 +105,9 @@ async function loadMonitoredDomainsUI() {
     del.className = 'btn-close btn-close-black ms-2';
     del.style.opacity = '0.8';
     del.addEventListener('click', async () => {
-      const ok = await globalThis._modal.showConfirm(`Remove monitored domain "${d}"?`);
+      const ok = await globalThis._modal.showConfirm(
+        tr('options.removeDomainConfirm', { domain: d })
+      );
       if (!ok) return;
       const dEsc = d.replaceAll("'", "''");
       await db.run(`DELETE FROM monitored_domains WHERE domain='${dEsc}';`);
@@ -119,9 +135,7 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
 document
   .getElementById('clear-monitored-domains')
   ?.addEventListener('click', async () => {
-    const ok = await globalThis._modal.showConfirm(
-      'Clear all monitored domains? This cannot be undone.'
-    );
+    const ok = await globalThis._modal.showConfirm(tr('options.clearDomainsConfirm'));
     if (!ok) return;
     await db.run('DELETE FROM monitored_domains;');
     loadMonitoredDomainsUI();
@@ -138,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('export-db')?.addEventListener('click', async () => {
   const status = document.getElementById('backup-status');
   try {
-    if (status) status.textContent = 'Preparing export...';
+    if (status) status.textContent = tr('options.exportPreparing');
     const settings = await db.query('SELECT k,v FROM settings;');
     const folders = await db.query('SELECT id,name FROM folders;');
     const bookmarks = await db.query(
@@ -167,10 +181,10 @@ document.getElementById('export-db')?.addEventListener('click', async () => {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    if (status) status.textContent = 'Database exported';
+    if (status) status.textContent = tr('options.exported');
   } catch (e) {
     console.error('Export failed', e);
-    if (status) status.textContent = `Export failed: ${String(e)}`;
+    if (status) status.textContent = tr('options.exportFailed', { error: String(e) });
   }
 });
 
@@ -179,7 +193,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
   try {
     const input = document.getElementById('import-db-file');
     if (!input || !input.files || input.files.length === 0) {
-      if (status) status.textContent = 'Select a JSON file first';
+      if (status) status.textContent = tr('options.selectJsonFirst');
       return;
     }
     const file = input.files[0];
@@ -188,7 +202,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
     try {
       obj = JSON.parse(text);
     } catch (e) {
-      if (status) status.textContent = 'Invalid JSON file';
+      if (status) status.textContent = tr('options.invalidJson');
       return;
     }
     const isObject = (value) =>
@@ -199,7 +213,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
       !Array.isArray(obj.folders) ||
       !Array.isArray(obj.bookmarks)
     ) {
-      if (status) status.textContent = 'JSON missing required tables';
+      if (status) status.textContent = tr('options.missingTables');
       return;
     }
     const monitored = Array.isArray(obj.monitored) ? obj.monitored : [];
@@ -212,14 +226,12 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
       ...visitHistory,
     ];
     if (allRows.some((row) => !isObject(row))) {
-      if (status) status.textContent = 'JSON contains invalid rows';
+      if (status) status.textContent = tr('options.invalidRows');
       return;
     }
-    const confirmed = await globalThis._modal.showConfirm(
-      'Restore this backup? All current bookmarks, history, and settings will be replaced.'
-    );
+    const confirmed = await globalThis._modal.showConfirm(tr('options.restoreConfirm'));
     if (!confirmed) return;
-    if (status) status.textContent = 'Restoring database...';
+    if (status) status.textContent = tr('options.restoring');
     const esc = (value) => String(value ?? '').replaceAll("'", "''");
     const statements = [
       'BEGIN;',
@@ -257,7 +269,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
       }
       statements.push('COMMIT;');
       await db.runBatch(statements);
-      if (status) status.textContent = 'Database restored (refreshing UI)...';
+      if (status) status.textContent = tr('options.restored');
       loadFoldersUI();
       loadMonitoredDomainsUI();
     } catch (e) {
@@ -271,7 +283,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
   } catch (e) {
     console.error('Restore failed', e);
     const status = document.getElementById('backup-status');
-    if (status) status.textContent = `Restore failed: ${String(e)}`;
+    if (status) status.textContent = tr('options.restoreFailed', { error: String(e) });
   }
 });
 
@@ -287,9 +299,7 @@ document.getElementById('open-sql-console')?.addEventListener('click', () => {
 // Open visit history viewer moved to popup
 
 document.getElementById('clear-visit-history')?.addEventListener('click', async () => {
-  const ok = await globalThis._modal.showConfirm(
-    'Clear private visit history? This cannot be undone.'
-  );
+  const ok = await globalThis._modal.showConfirm(tr('options.clearHistoryConfirm'));
   if (!ok) return;
   await db.run('DELETE FROM visit_history;');
 });
@@ -315,7 +325,7 @@ async function showDeleteFolderPrompt(folderId) {
   const el = document.getElementById('folders-list');
   const folders = await db.getFolders();
   const folder = folders.find((f) => f.id === folderId);
-  if (!folder) return alert('Folder not found');
+  if (!folder) return alert(tr('options.folderNotFound'));
   const { escapeHtml } = globalThis.AppUtils;
   const promptDiv = document.createElement('div');
   promptDiv.className = 'folder-delete-prompt';
@@ -325,10 +335,10 @@ async function showDeleteFolderPrompt(folderId) {
     moveSelectHtml += `<option value="${escapeHtml(f.id)}">${escapeHtml(f.name)}</option>`;
   }
   moveSelectHtml += '</select>';
-  promptDiv.innerHTML = `<div>Delete folder "${escapeHtml(folder.name)}" — what to do with its bookmarks?</div>
-    <label><input type="radio" name="del-action" value="delete" checked> Delete bookmarks</label><br>
-    <label><input type="radio" name="del-action" value="move"> Move bookmarks to: ${otherFolders.length ? moveSelectHtml : '<em>(no other folder)</em>'}</label>
-    <div><button id="del-confirm" class="btn btn-danger me-2">Confirm</button> <button id="del-cancel" class="btn btn-secondary me-2">Cancel</button></div>`;
+  promptDiv.innerHTML = `<div>${tr('options.deleteFolderPrompt', { folder: escapeHtml(folder.name) })}</div>
+    <label><input type="radio" name="del-action" value="delete" checked> ${tr('options.deleteBookmarksOption')}</label><br>
+    <label><input type="radio" name="del-action" value="move"> ${tr('options.moveBookmarksOption')} ${otherFolders.length ? moveSelectHtml : `<em>${tr('options.noOtherFolder')}</em>`}</label>
+    <div><button id="del-confirm" class="btn btn-danger me-2">${tr('options.confirm')}</button> <button id="del-cancel" class="btn btn-secondary me-2">${tr('common.cancel')}</button></div>`;
   const rows = el.querySelectorAll('.folder-row');
   let replaced = false;
   for (const r of rows) {
@@ -351,7 +361,7 @@ async function showDeleteFolderPrompt(folderId) {
       await db.run(`DELETE FROM folders WHERE id='${fid}';`);
     } else {
       const sel = document.getElementById('delete-move-target');
-      if (!sel || !sel.value) return alert('No target folder selected');
+      if (!sel || !sel.value) return alert(tr('options.noTargetFolder'));
       const targetId = sel.value;
       const fid = String(folderId).replaceAll("'", "''");
       const tid = String(targetId).replaceAll("'", "''");
@@ -366,7 +376,7 @@ async function showDeleteFolderPrompt(folderId) {
 // create folder
 document.getElementById('create-folder')?.addEventListener('click', async () => {
   const name = document.getElementById('new-folder-name').value;
-  if (!name) return alert('Folder name required');
+  if (!name) return alert(tr('options.folderNameRequired'));
   await db.addFolder({ name });
   document.getElementById('new-folder-name').value = '';
   loadFoldersUI();
@@ -382,10 +392,13 @@ document.getElementById('folders-list')?.addEventListener('click', (e) => {
       const folders = await db.getFolders();
       const f = folders.find((x) => x.id === id);
       if (!f) {
-        await _modal.showConfirm('Folder not found');
+        await _modal.showConfirm(tr('options.folderNotFound'));
         return;
       }
-      const newName = await _modal.showTextPrompt('New folder name', f.name);
+      const newName = await _modal.showTextPrompt(
+        tr('options.newFolderNamePrompt'),
+        f.name
+      );
       if (newName == null) return;
       await db.addFolder({ id: f.id, name: newName });
       loadFoldersUI();
@@ -429,23 +442,23 @@ function collectChromeBookmarks(node, out) {
 
 document.getElementById('import-chrome')?.addEventListener('click', async () => {
   const sel = document.getElementById('chrome-folders-select');
-  if (!sel || !sel.value) return alert('Select a Chrome folder to import');
+  if (!sel || !sel.value) return alert(tr('options.importSelectFolder'));
   const chromeFolderId = sel.value;
   const statusEl = document.getElementById('import-status');
-  if (statusEl) statusEl.textContent = 'Importing...';
+  if (statusEl) statusEl.textContent = tr('options.importing');
   chrome.bookmarks.getSubTree(chromeFolderId, async (nodes) => {
     if (!nodes || nodes.length === 0) {
-      if (statusEl) statusEl.textContent = 'No nodes found';
+      if (statusEl) statusEl.textContent = tr('options.noNodes');
       return;
     }
     const root = nodes[0];
     const collected = [];
     collectChromeBookmarks(root, collected);
     if (collected.length === 0) {
-      if (statusEl) statusEl.textContent = 'No bookmarks to import in selected folder.';
+      if (statusEl) statusEl.textContent = tr('options.noBookmarksToImport');
       return;
     }
-    const chromeFolderName = root.title || 'Imported';
+    const chromeFolderName = root.title || tr('options.importedFolderName');
     // create a new folder and add bookmarks into it
     const folder = await db.addFolder({ name: chromeFolderName });
     await db.addBookmarks(
@@ -457,7 +470,10 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
       }))
     );
     if (statusEl)
-      statusEl.textContent = `Imported ${collected.length} bookmarks into folder "${chromeFolderName}"`;
+      statusEl.textContent = tr('options.importedCount', {
+        count: collected.length,
+        folder: chromeFolderName,
+      });
     await loadFoldersUI();
     await loadChromeFoldersIntoSelect();
   });
@@ -466,7 +482,9 @@ document.getElementById('import-chrome')?.addEventListener('click', async () => 
 document.getElementById('export-html')?.addEventListener('click', async () => {
   const bms = await db.getBookmarks();
   let folders = await db.getFolders();
-  if (!folders || folders.length === 0) folders = [{ id: '1', name: 'Default' }];
+  if (!folders || folders.length === 0) {
+    folders = [{ id: '1', name: tr('common.defaultFolder') }];
+  }
   const { escapeHtml } = globalThis.AppUtils;
   let html =
     '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n';
@@ -497,22 +515,28 @@ loadChromeFoldersIntoSelect();
 
 document.getElementById('migrate-db')?.addEventListener('click', () => {
   const statusEl = document.getElementById('migration-status');
-  if (statusEl) statusEl.textContent = 'Starting migration...';
+  if (statusEl) statusEl.textContent = tr('options.migrationStarting');
   try {
     chrome.runtime
       .sendMessage({ action: 'MIGRATE_DB' })
       .then((resp) => {
         if (resp && resp.status === 'success') {
-          if (statusEl) statusEl.textContent = 'Migration completed successfully.';
+          if (statusEl) statusEl.textContent = tr('options.migrationCompleted');
         } else {
           if (statusEl)
-            statusEl.textContent = `Migration failed: ${resp?.message || 'unknown'}`;
+            statusEl.textContent = tr('options.migrationFailed', {
+              error: resp?.message || tr('options.unknownError'),
+            });
         }
       })
       .catch((err) => {
-        if (statusEl) statusEl.textContent = `Migration failed: ${String(err)}`;
+        if (statusEl)
+          statusEl.textContent = tr('options.migrationFailed', {
+            error: String(err),
+          });
       });
   } catch (e) {
-    if (statusEl) statusEl.textContent = `Migration error: ${String(e)}`;
+    if (statusEl)
+      statusEl.textContent = tr('options.migrationError', { error: String(e) });
   }
 });

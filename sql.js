@@ -1,3 +1,5 @@
+const tr = (key, vars) => globalThis.I18n.t(key, vars);
+
 // SQL console script: runs SQL entered in the textarea and shows results
 let lastResults = null;
 
@@ -6,7 +8,7 @@ function renderResults(res, container) {
   if (!res || res.length === 0) {
     const p = document.createElement('p');
     p.className = 'text-muted';
-    p.textContent = '(no rows)';
+    p.textContent = tr('sql.noRows');
     container.appendChild(p);
     return;
   }
@@ -42,29 +44,27 @@ async function runSql() {
   const status = document.getElementById('sql-status');
   const container = document.getElementById('sql-results');
   if (!sql) {
-    if (status) status.textContent = 'Enter SQL to run';
+    if (status) status.textContent = tr('sql.enterSql');
     return;
   }
   try {
     if (globalThis.AppUtils.isDestructiveSql(sql)) {
-      const ok = await globalThis._modal.showConfirm(
-        'This SQL contains write or schema-changing statements. Continue?'
-      );
+      const ok = await globalThis._modal.showConfirm(tr('sql.destructiveConfirm'));
       if (!ok) {
-        if (status) status.textContent = 'Cancelled';
+        if (status) status.textContent = tr('sql.cancelled');
         return;
       }
     }
-    if (status) status.textContent = 'Running...';
+    if (status) status.textContent = tr('sql.running');
     // Decide whether to use parameterized runner or simple query
     // For convenience, we use the raw query path. If multiple statements are provided, db.query will return blocks.
     const res = await globalThis.db.query(sql);
     renderResults(res, container);
     lastResults = res;
-    if (status) status.textContent = `Returned ${res.length} rows`;
+    if (status) status.textContent = tr('sql.returnedRows', { count: res.length });
   } catch (e) {
     console.error('SQL failed', e);
-    if (status) status.textContent = `Error: ${String(e)}`;
+    if (status) status.textContent = tr('sql.errorPrefix', { error: String(e) });
   }
 }
 
@@ -80,7 +80,7 @@ function clearSql() {
 
 function exportLastResults() {
   if (!lastResults) {
-    alert('No results to export');
+    alert(tr('sql.noResultsToExport'));
     return;
   }
   const blob = new Blob([JSON.stringify(lastResults, null, 2)], {

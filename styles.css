@@ -33,6 +33,21 @@ body {
   padding: 10px;
 }
 
+html[lang='zh-CN'] body {
+  font-family:
+    'Noto Sans SC',
+    'Noto Sans CJK SC',
+    'Microsoft YaHei',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    Arial,
+    sans-serif;
+}
+
 h1 {
   font-size: 16px;
 }

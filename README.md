@@ -16,7 +16,9 @@ Structure
 - Background service worker: SQLite ownership and history monitoring (`background.js`).
 - `db.js`: page-side messaging client that exposes `globalThis.db`.
 - `shared.js`: escaping, URL safety, password hashing/verification, and unlock helpers.
+- `i18n.js`: English, Japanese, and Simplified Chinese UI catalogs, browser-language detection, and the Options language override.
 - `modal.js`: async `_modal.showConfirm` / `showTextPrompt` dialogs.
+- `_locales/`: Chrome manifest localization for the extension name, description, and action title.
 
 Key features
 ------------
@@ -29,6 +31,7 @@ Key features
 - Monitored domains: completed navigations are recorded and matching URLs are removed from Chrome's native history.
 - JSON backup/restore for all tables. Restore requires confirmation, validates the backup shape, and runs in a transaction.
 - Local Bootstrap 5 and Noto Sans JP assets bundled by Parcel; pages make no CDN requests.
+- English, Japanese, and Simplified Chinese UI with browser-language detection and an Options override. The preference is stored in extension `localStorage`.
 - Non-blocking modal helpers replace blocking prompts.
 
 Permissions
@@ -71,6 +74,7 @@ UI/Usage
   - Shows a paginated bookmark list with edit, delete, and move-to-folder controls.
 - Options page:
   - Manage the password, folders, and monitored domains.
+  - Choose the UI language (system default, English, Japanese, or Simplified Chinese).
   - Import Chrome bookmarks, export bookmarks to HTML, and back up/restore all tables as JSON.
   - Export or clear private visit history.
 - History page:
@@ -83,7 +87,7 @@ Development
 
 - Install dependencies: `npm install`
 - Watch build: `npm start`
-- Production build: `npm run build` (deletes `build/`, bundles explicit entries, then copies `manifest.json` and `icons/*`)
+- Production build: `npm run build` (deletes `build/`, bundles explicit entries, then copies `manifest.json`, `icons/*`, and `_locales/**/*`)
 - Load `build/` via `chrome://extensions` -> Developer mode -> Load unpacked.
 - Tests: `npm test` (`node:test` coverage for shared helpers).
 - Lint: `npm run lint` (ESLint).

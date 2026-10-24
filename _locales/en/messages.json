@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "Private Bookmark"
+  },
+  "extDescription": {
+    "message": "Add, edit, delete, and view private bookmarks. Password-protected viewer. Optional history monitoring."
+  },
+  "actionTitle": {
+    "message": "Private Bookmark"
+  }
+}

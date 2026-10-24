@@ -1,42 +1,62 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Private Bookmarks - View</title>
+    <title data-i18n="view.title">Private Bookmarks - View</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="i18n.js"></script>
     <script src="shared.js"></script>
     <script src="modal.js"></script>
   </head>
 
   <body class="view-page">
-    <h1>Private Bookmarks</h1>
+    <h1 data-i18n="view.heading">Private Bookmarks</h1>
     <div id="auth">
-      <p id="auth-msg">Checking...</p>
+      <p id="auth-msg" data-i18n="view.authChecking">Checking...</p>
       <input
         id="pw"
         type="password"
         placeholder="Enter password"
         class="form-control mb-2"
+        data-i18n-placeholder="view.passwordPlaceholder"
       />
-      <button id="unlock" class="btn btn-primary">Unlock</button>
+      <button id="unlock" class="btn btn-primary" data-i18n="view.unlock">Unlock</button>
     </div>
     <div id="content" style="display: none">
       <section>
         <div class="d-flex align-items-center mb-2">
-          <h2 class="mb-0">Bookmarks</h2>
-          <button id="refresh-bookmarks" class="btn btn-sm btn-outline-secondary ms-3">
+          <h2 class="mb-0" data-i18n="view.bookmarksHeading">Bookmarks</h2>
+          <button
+            id="refresh-bookmarks"
+            class="btn btn-sm btn-outline-secondary ms-3"
+            data-i18n="common.refresh"
+          >
             Refresh
           </button>
-          <button id="delete-all-bookmarks" class="btn btn-sm btn-danger ms-2">
+          <button
+            id="delete-all-bookmarks"
+            class="btn btn-sm btn-danger ms-2"
+            data-i18n="common.removeAll"
+          >
             Remove All
           </button>
         </div>
-        <div id="bookmarks-list">Loading...</div>
+        <div id="bookmarks-list" data-i18n="common.loading">Loading...</div>
         <div class="d-flex justify-content-between align-items-center mt-2">
           <div>
-            <button id="bm-prev" class="btn btn-sm btn-outline-secondary">Prev</button>
-            <button id="bm-next" class="btn btn-sm btn-outline-secondary ms-2">
+            <button
+              id="bm-prev"
+              class="btn btn-sm btn-outline-secondary"
+              data-i18n="common.prev"
+            >
+              Prev
+            </button>
+            <button
+              id="bm-next"
+              class="btn btn-sm btn-outline-secondary ms-2"
+              data-i18n="common.next"
+            >
               Next
             </button>
           </div>

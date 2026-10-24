@@ -25,7 +25,9 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - `db.js` never opens SQLite directly. It sends `chrome.runtime` messages to the background, checks `chrome.runtime.lastError`, and flattens result blocks into objects, exposed as `globalThis.db`.
 - Pages: `popup.*` (add/monitor/open), `view.*` (password-protected bookmarks), `options.*` (settings, folders, import/export, backup), `history.*` (visit history), `sql.*` (SQL console opened from Options).
 - `shared.js` must load before page scripts; it provides `AppUtils` escaping, URL safety, destructive SQL detection, PBKDF2 password functions, and `authenticate`.
+- `i18n.js` must load before page scripts; it provides `I18n.t`, automatic browser-language detection for English/Japanese/Simplified Chinese, and the Options language override stored in extension `localStorage`.
 - `modal.js` must load before page scripts; it provides async `_modal.showConfirm` / `showTextPrompt` used everywhere.
+- Manifest name, description, and action title use `__MSG_*__` keys from `_locales/{en,ja,zh_CN}/messages.json`; `npm run copy:static` copies those locale files into `build/`.
 - Schema and indexes are defined in `createSchema()` in `background.js`. Schema upgrades use `PRAGMA user_version` and the `SCHEMA_VERSION` constant; add a version-gated migration block when changing the schema.
 - Legacy `chrome.storage.local` data is migrated automatically when the worker starts. The `db_migrated_v1` setting in the SQLite `settings` table is checked before importing legacy data, so completed installs skip that work.
 

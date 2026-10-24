@@ -1,62 +1,95 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Private Visit History</title>
+    <title data-i18n="history.title">Private Visit History</title>
     <link rel="stylesheet" href="styles.css" />
+    <script src="i18n.js"></script>
     <script src="shared.js"></script>
     <script src="modal.js"></script>
   </head>
 
   <body class="container py-3">
-    <h2>Private Visit History</h2>
+    <h2 data-i18n="history.heading">Private Visit History</h2>
     <div id="auth">
-      <p id="auth-msg" class="text-muted">Enter password to view.</p>
-      <input id="pw" type="password" class="form-control mb-2" placeholder="Password" />
-      <button id="unlock" class="btn btn-primary">Unlock</button>
+      <p id="auth-msg" class="text-muted" data-i18n="auth.enterPassword">
+        Enter password to view.
+      </p>
+      <input
+        id="pw"
+        type="password"
+        class="form-control mb-2"
+        placeholder="Password"
+        data-i18n-placeholder="history.passwordPlaceholder"
+      />
+      <button id="unlock" class="btn btn-primary" data-i18n="view.unlock">Unlock</button>
     </div>
     <div id="content" style="display: none">
       <div class="d-flex align-items-center mb-2">
-        <p class="text-muted mb-0">
+        <p class="text-muted mb-0" data-i18n="history.instruction">
           Click a title to open the corresponding page (opens in a new tab).
         </p>
-        <button id="refresh-history" class="btn btn-sm btn-outline-secondary ms-3">
+        <button
+          id="refresh-history"
+          class="btn btn-sm btn-outline-secondary ms-3"
+          data-i18n="common.refresh"
+        >
           Refresh
         </button>
       </div>
       <div id="history-search" class="card card-body mb-2">
         <div class="row g-2 align-items-end">
           <div class="col-md-4">
-            <label class="form-label small mb-1">Title keywords</label>
+            <label class="form-label small mb-1" data-i18n="history.searchTitleLabel">
+              Title keywords
+            </label>
             <input
               id="search-title"
               class="form-control"
               type="search"
               placeholder="Search by title keywords"
+              data-i18n-placeholder="history.searchTitlePlaceholder"
             />
           </div>
           <div class="col-md-4">
-            <label class="form-label small mb-1">URL keywords</label>
+            <label class="form-label small mb-1" data-i18n="history.searchUrlLabel">
+              URL keywords
+            </label>
             <input
               id="search-url"
               class="form-control"
               type="search"
               placeholder="Search by URL or domain"
+              data-i18n-placeholder="history.searchUrlPlaceholder"
             />
           </div>
           <div class="col-md-2">
-            <label class="form-label small mb-1">Start date</label>
+            <label class="form-label small mb-1" data-i18n="history.startDateLabel">
+              Start date
+            </label>
             <input id="search-start" class="form-control" type="date" />
           </div>
           <div class="col-md-2">
-            <label class="form-label small mb-1">End date</label>
+            <label class="form-label small mb-1" data-i18n="history.endDateLabel">
+              End date
+            </label>
             <input id="search-end" class="form-control" type="date" />
           </div>
         </div>
         <div class="mt-2 d-flex gap-2">
-          <button id="search-run" class="btn btn-primary btn-sm">Search</button>
-          <button id="search-clear" class="btn btn-outline-secondary btn-sm">
+          <button
+            id="search-run"
+            class="btn btn-primary btn-sm"
+            data-i18n="common.search"
+          >
+            Search
+          </button>
+          <button
+            id="search-clear"
+            class="btn btn-outline-secondary btn-sm"
+            data-i18n="common.clear"
+          >
             Clear
           </button>
         </div>
@@ -64,15 +97,27 @@
       <div id="history-list"></div>
       <div class="d-flex justify-content-between align-items-center mt-2">
         <div>
-          <button id="hist-prev" class="btn btn-sm btn-outline-secondary">Prev</button>
-          <button id="hist-next" class="btn btn-sm btn-outline-secondary ms-2">
+          <button
+            id="hist-prev"
+            class="btn btn-sm btn-outline-secondary"
+            data-i18n="common.prev"
+          >
+            Prev
+          </button>
+          <button
+            id="hist-next"
+            class="btn btn-sm btn-outline-secondary ms-2"
+            data-i18n="common.next"
+          >
             Next
           </button>
         </div>
         <div id="hist-page-info" class="text-muted small"></div>
       </div>
       <div class="mt-3">
-        <button id="close" class="btn btn-secondary">Close</button>
+        <button id="close" class="btn btn-secondary" data-i18n="common.close">
+          Close
+        </button>
       </div>
     </div>
     <script src="db.js"></script>
