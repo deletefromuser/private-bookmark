@@ -163,9 +163,22 @@ const db = (function () {
         (r) => r.domain
       );
     },
-    async addMonitoredDomain(domain) {
+    async getMonitoredDomainsWithPatterns() {
+      const results = await rawQuery('SELECT domain, url_pattern FROM monitored_domains');
+      return results.map(r => ({
+        domain: r.domain,
+        urlPattern: r.url_pattern || ''
+      }));
+    },
+    async addMonitoredDomain(domain, urlPattern = '') {
       const d = (domain || '').replaceAll("'", "''");
-      await run(`INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${d}');`);
+      const p = (urlPattern || '').replaceAll("'", "''");
+      await run(`INSERT OR REPLACE INTO monitored_domains(domain, url_pattern) VALUES('${d}', '${p}');`);
+    },
+    async updateMonitoredDomain(domain, urlPattern) {
+      const d = (domain || '').replaceAll("'", "''");
+      const p = (urlPattern || '').replaceAll("'", "''");
+      await run(`UPDATE monitored_domains SET url_pattern = '${p}' WHERE domain = '${d}';`);
     },
     async getVisitHistory(limit = 100) {
       const rows = await rawQuery(

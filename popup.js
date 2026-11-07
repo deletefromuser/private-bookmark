@@ -85,13 +85,25 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
   if (!tab || !tab.url) return showStatus(tr('popup.noActiveTabUrl'));
   const url = new URL(tab.url);
   const domain = url.hostname.replace(/^www\./, '');
+  const currentUrl = tab.url;
+  
   const list = await globalThis.db.getMonitoredDomains();
   if (list.includes(domain)) {
     showStatus(tr('popup.domainAlreadyMonitored'));
-  } else {
-    await globalThis.db.addMonitoredDomain(domain);
-    showStatus(tr('popup.domainAdded'));
+    return;
   }
+  
+  // Show modal to add/edit domain with URL pattern
+  const pattern = await globalThis._modal.showTextPrompt(
+    tr('popup.addDomainWithPattern'),
+    currentUrl,
+    `${tr('popup.domainLabel')}: ${domain}`
+  );
+  
+  if (pattern == null) return; // cancelled
+  
+  await globalThis.db.addMonitoredDomain(domain, pattern);
+  showStatus(tr('popup.domainAddedWithPattern', { domain, pattern }));
 });
 
 document.getElementById('open-view').addEventListener('click', () => {

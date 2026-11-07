@@ -18,7 +18,22 @@ async function handlePossibleVisit(url, title) {
     return;
   }
   const domain = parsed.hostname.replace(/^www\./, '');
-  if (!(await isDomainMonitored(domain))) return;
+  
+  // Check against all monitored domains with their URL patterns
+  const monitoredDomains = await getAllMonitoredDomains();
+  let isMonitored = false;
+  
+  for (const entry of monitoredDomains) {
+    if (entry.domain === domain) {
+      if (!entry.urlPattern || entry.urlPattern === '') {
+        isMonitored = true; // domain-only matching
+      } else if (url.includes(entry.urlPattern)) {
+        isMonitored = true; // URL pattern matches
+      }
+    }
+  }
+  
+  if (!isMonitored) return;
   const now = Date.now();
   const last = recentSeen.get(url) || 0;
   if (now - last < DEBOUNCE_MS) return; // skip duplicates
@@ -197,7 +212,7 @@ chrome.runtime.onSuspend?.addListener(() => {
   closeDatabase();
 });
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 async function getSchemaVersion() {
   const blocks = await exec('PRAGMA user_version;');
@@ -223,11 +238,19 @@ async function createSchema() {
       `CREATE TABLE IF NOT EXISTS bookmarks(id TEXT PRIMARY KEY, title TEXT, url TEXT, folderId TEXT, added INTEGER);`,
       `CREATE INDEX IF NOT EXISTS idx_bookmarks_url ON bookmarks(url);`,
       `CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folderId);`,
-      `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY);`,
+      `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY, url_pattern TEXT DEFAULT '');`,
       `CREATE TABLE IF NOT EXISTS visit_history(id TEXT PRIMARY KEY, url TEXT, title TEXT, domain TEXT, timestamp INTEGER);`,
       `CREATE INDEX IF NOT EXISTS idx_history_domain ON visit_history(domain);`,
       `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp);`,
     ]);
+  }
+
+  if (version < 2) {
+    try {
+      await exec(`ALTER TABLE monitored_domains ADD COLUMN url_pattern TEXT DEFAULT '';`);
+    } catch (e) {
+      console.warn('Failed to add url_pattern column, may already exist:', e);
+    }
   }
 
   await exec(`PRAGMA user_version = ${SCHEMA_VERSION};`);
@@ -244,20 +267,50 @@ async function execBatches(statements, batchSize = 100) {
   }
 }
 
-// helper: check if domain is in monitored_domains table
-async function isDomainMonitored(domain) {
+// helper: check if domain is in monitored_domains table (supports URL patterns)
+async function isDomainMonitored(domain, url = '') {
   try {
-    const rows = await exec(
-      `SELECT domain FROM monitored_domains WHERE domain='${esc(domain)}' LIMIT 1;`
-    );
-    // rows is an array of blocks; check if any rows exist
+    let sql = `SELECT domain, url_pattern FROM monitored_domains WHERE domain='${esc(domain)}';`;
+    const rows = await exec(sql);
     for (const b of rows || []) {
-      if (Array.isArray(b.rows) && b.rows.length > 0) return true;
+      if (Array.isArray(b.rows) && b.rows.length > 0) {
+        for (const row of b.rows) {
+          const pattern = row[1]; // url_pattern
+          if (!pattern || pattern === '') {
+            return true; // domain-only matching
+          }
+          if (url && url.includes(pattern)) {
+            return true; // URL pattern matches
+          }
+        }
+      }
     }
     return false;
   } catch (e) {
     console.warn('isDomainMonitored query failed', e);
     return false;
+  }
+}
+
+// helper: get all monitored domains with URL patterns for handlePossibleVisit
+async function getAllMonitoredDomains() {
+  try {
+    const rows = await exec(`SELECT domain, url_pattern FROM monitored_domains;`);
+    const domains = [];
+    for (const b of rows || []) {
+      if (Array.isArray(b.rows) && b.rows.length > 0) {
+        for (const row of b.rows) {
+          domains.push({
+            domain: row[0],
+            urlPattern: row[1] || ''
+          });
+        }
+      }
+    }
+    return domains;
+  } catch (e) {
+    console.warn('getAllMonitoredDomains query failed', e);
+    return [];
   }
 }
 
@@ -360,7 +413,7 @@ async function migrateLocalStorageToSQLite() {
     const mons = Array.isArray(keys.monitoredDomains) ? keys.monitoredDomains : [];
     await execBatches(
       mons.map(
-        (d) => `INSERT OR REPLACE INTO monitored_domains(domain) VALUES('${esc(d)}');`
+        (d) => `INSERT OR REPLACE INTO monitored_domains(domain, url_pattern) VALUES('${esc(d)}', '');`
       )
     );
 

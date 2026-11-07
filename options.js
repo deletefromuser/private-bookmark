@@ -94,27 +94,51 @@ async function loadFoldersUI() {
 
 // ------------------ History Monitoring: monitoredDomains ------------------
 async function loadMonitoredDomainsUI() {
-  const list = (await db.getMonitoredDomains()) || [];
+  const domainsWithPatterns = (await db.getMonitoredDomainsWithPatterns()) || [];
   const container = document.getElementById('monitored-domains-list');
   container.innerHTML = '';
-  for (const d of list) {
+  for (const entry of domainsWithPatterns) {
+    const domain = entry.domain;
+    const pattern = entry.urlPattern || '';
+    
     const badge = document.createElement('span');
     badge.className = 'badge bg-secondary me-1 mb-1 d-inline-flex align-items-center';
-    badge.textContent = d;
+    badge.textContent = domain;
+    if (pattern) {
+      badge.title = `URL Pattern: ${pattern}`;
+    }
+    
+    const edit = document.createElement('button');
+    edit.className = 'btn btn-sm btn-outline-primary me-1';
+    edit.innerHTML = '<i class="bi bi-pencil"></i>';
+    edit.title = 'Edit URL pattern';
+    edit.addEventListener('click', async () => {
+      const newPattern = await globalThis._modal.showTextPrompt(
+        tr('options.editDomainPatternPrompt', { domain }),
+        pattern || ''
+      );
+      if (newPattern == null) return; // cancelled
+      await db.updateMonitoredDomain(domain, newPattern);
+      loadMonitoredDomainsUI();
+    });
+    
     const del = document.createElement('button');
     del.className = 'btn-close btn-close-black ms-2';
     del.style.opacity = '0.8';
+    del.title = 'Remove domain';
     del.addEventListener('click', async () => {
       const ok = await globalThis._modal.showConfirm(
-        tr('options.removeDomainConfirm', { domain: d })
+        tr('options.removeDomainConfirm', { domain })
       );
       if (!ok) return;
-      const dEsc = d.replaceAll("'", "''");
+      const dEsc = domain.replaceAll("'", "''");
       await db.run(`DELETE FROM monitored_domains WHERE domain='${dEsc}';`);
       loadMonitoredDomainsUI();
     });
+    
     const wrapper = document.createElement('span');
     wrapper.appendChild(badge);
+    wrapper.appendChild(edit);
     wrapper.appendChild(del);
     container.appendChild(wrapper);
   }
@@ -124,9 +148,19 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
   const input = document.getElementById('new-monitored-domain');
   const domain = input.value.trim();
   if (!domain) return;
+  
+  // Show modal to add/edit domain with URL pattern
+  const pattern = await globalThis._modal.showTextPrompt(
+    tr('options.addDomainPatternPrompt'),
+    '', // default empty pattern
+    `${tr('options.domainLabel')}: ${domain}`
+  );
+  
+  if (pattern == null) return; // cancelled
+  
   const list = await db.getMonitoredDomains();
   if (!list.includes(domain)) {
-    await db.addMonitoredDomain(domain);
+    await db.addMonitoredDomain(domain, pattern);
     input.value = '';
     loadMonitoredDomainsUI();
   }
@@ -158,7 +192,7 @@ document.getElementById('export-db')?.addEventListener('click', async () => {
     const bookmarks = await db.query(
       'SELECT id,title,url,folderId,added FROM bookmarks;'
     );
-    const monitored = await db.query('SELECT domain FROM monitored_domains;');
+    const monitored = await db.query('SELECT domain, url_pattern FROM monitored_domains;');
     const visit_history = await db.query(
       'SELECT id,url,title,domain,timestamp FROM visit_history;'
     );
@@ -257,8 +291,9 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
         );
       }
       for (const m of monitored) {
+        const urlPattern = m.url_pattern || '';
         statements.push(
-          `INSERT INTO monitored_domains(domain) VALUES('${esc(m.domain)}');`
+          `INSERT INTO monitored_domains(domain, url_pattern) VALUES('${esc(m.domain)}', '${esc(urlPattern)}');`
         );
       }
       for (const h of visitHistory) {
