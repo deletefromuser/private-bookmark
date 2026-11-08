@@ -198,7 +198,7 @@ function execParams(sql, params) {
       }
       let columns = null;
       const rows = [];
-      while ((await sqlite3.step(stmt)) === SQLite.SQLITE_ROW) {
+      while ((await sqlite3.step(stmt)) === 100) {
         if (!columns) columns = sqlite3.column_names(stmt);
         rows.push(sqlite3.row(stmt));
       }
