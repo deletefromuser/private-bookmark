@@ -98,6 +98,7 @@ async function loadMonitoredDomainsUI() {
   const container = document.getElementById('monitored-domains-list');
   container.innerHTML = '';
   for (const entry of domainsWithPatterns) {
+    const id = entry.id;
     const domain = entry.domain;
     const pattern = entry.urlPattern || '';
     
@@ -118,7 +119,7 @@ async function loadMonitoredDomainsUI() {
         pattern || ''
       );
       if (newPattern == null) return; // cancelled
-      await db.updateMonitoredDomain(domain, newPattern);
+      await db.updateMonitoredDomain(id, newPattern);
       loadMonitoredDomainsUI();
     });
     
@@ -131,8 +132,7 @@ async function loadMonitoredDomainsUI() {
         tr('options.removeDomainConfirm', { domain })
       );
       if (!ok) return;
-      const dEsc = domain.replaceAll("'", "''");
-      await db.run(`DELETE FROM monitored_domains WHERE domain='${dEsc}';`);
+      await db.deleteMonitoredDomain(id);
       loadMonitoredDomainsUI();
     });
     
@@ -158,12 +158,20 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
   
   if (pattern == null) return; // cancelled
   
-  const list = await db.getMonitoredDomains();
-  if (!list.includes(domain)) {
-    await db.addMonitoredDomain(domain, pattern);
-    input.value = '';
-    loadMonitoredDomainsUI();
+  // Check if exact domain+pattern combination already exists
+  const exists = await db.checkDomainPatternExists(domain, pattern);
+  if (exists) {
+    document.getElementById('status').textContent = tr('popup.domainPatternAlreadyMonitored', { domain, pattern });
+    return;
   }
+  
+  const result = await db.addMonitoredDomain(domain, pattern);
+  if (result.duplicate) {
+    document.getElementById('status').textContent = tr('popup.domainPatternAlreadyMonitored', { domain, pattern });
+    return;
+  }
+  input.value = '';
+  loadMonitoredDomainsUI();
 });
 
 document

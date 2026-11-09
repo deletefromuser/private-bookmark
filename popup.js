@@ -87,13 +87,7 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
   const domain = url.hostname.replace(/^www\./, '');
   const currentUrl = tab.url;
   
-  const list = await globalThis.db.getMonitoredDomains();
-  if (list.includes(domain)) {
-    showStatus(tr('popup.domainAlreadyMonitored'));
-    return;
-  }
-  
-  // Show modal to add/edit domain with URL pattern
+  // Show modal to add domain with URL pattern
   const pattern = await globalThis._modal.showTextPrompt(
     tr('popup.addDomainWithPattern'),
     currentUrl,
@@ -102,7 +96,18 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
   
   if (pattern == null) return; // cancelled
   
-  await globalThis.db.addMonitoredDomain(domain, pattern);
+  // Check if exact domain+pattern combination already exists
+  const exists = await globalThis.db.checkDomainPatternExists(domain, pattern);
+  if (exists) {
+    showStatus(tr('popup.domainPatternAlreadyMonitored', { domain, pattern }));
+    return;
+  }
+  
+  const result = await globalThis.db.addMonitoredDomain(domain, pattern);
+  if (result.duplicate) {
+    showStatus(tr('popup.domainPatternAlreadyMonitored', { domain, pattern }));
+    return;
+  }
   showStatus(tr('popup.domainAddedWithPattern', { domain, pattern }));
 });
 

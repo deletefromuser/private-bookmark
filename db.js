@@ -164,21 +164,37 @@ const db = (function () {
       );
     },
     async getMonitoredDomainsWithPatterns() {
-      const results = await rawQuery('SELECT domain, url_pattern FROM monitored_domains');
+      const results = await rawQuery('SELECT id, domain, url_pattern FROM monitored_domains');
       return results.map(r => ({
+        id: r.id,
         domain: r.domain,
         urlPattern: r.url_pattern || ''
       }));
     },
+    async checkDomainPatternExists(domain, urlPattern = '') {
+      const d = (domain || '').replaceAll("'", "''");
+      const p = (urlPattern || '').replaceAll("'", "''");
+      const results = await rawQuery(`SELECT id FROM monitored_domains WHERE domain = '${d}' AND url_pattern = '${p}'`);
+      return results.length > 0;
+    },
     async addMonitoredDomain(domain, urlPattern = '') {
       const d = (domain || '').replaceAll("'", "''");
       const p = (urlPattern || '').replaceAll("'", "''");
-      await run(`INSERT OR REPLACE INTO monitored_domains(domain, url_pattern) VALUES('${d}', '${p}');`);
+      // Check for duplicate domain+pattern combination
+      const exists = await this.checkDomainPatternExists(d, p);
+      if (exists) return { id: null, duplicate: true };
+      await run(`INSERT INTO monitored_domains(domain, url_pattern) VALUES('${d}', '${p}');`);
+      const results = await rawQuery(`SELECT id FROM monitored_domains WHERE domain = '${d}' AND url_pattern = '${p}' ORDER BY id DESC LIMIT 1`);
+      return { id: results[0]?.id || null, duplicate: false };
     },
-    async updateMonitoredDomain(domain, urlPattern) {
-      const d = (domain || '').replaceAll("'", "''");
+    async updateMonitoredDomain(id, urlPattern) {
+      const iid = Number(id);
       const p = (urlPattern || '').replaceAll("'", "''");
-      await run(`UPDATE monitored_domains SET url_pattern = '${p}' WHERE domain = '${d}';`);
+      await run(`UPDATE monitored_domains SET url_pattern = '${p}' WHERE id = ${iid};`);
+    },
+    async deleteMonitoredDomain(id) {
+      const iid = Number(id);
+      await run(`DELETE FROM monitored_domains WHERE id = ${iid};`);
     },
     async getVisitHistory(limit = 100) {
       const rows = await rawQuery(

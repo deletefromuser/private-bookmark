@@ -212,7 +212,7 @@ chrome.runtime.onSuspend?.addListener(() => {
   closeDatabase();
 });
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 async function getSchemaVersion() {
   const blocks = await exec('PRAGMA user_version;');
@@ -238,7 +238,7 @@ async function createSchema() {
       `CREATE TABLE IF NOT EXISTS bookmarks(id TEXT PRIMARY KEY, title TEXT, url TEXT, folderId TEXT, added INTEGER);`,
       `CREATE INDEX IF NOT EXISTS idx_bookmarks_url ON bookmarks(url);`,
       `CREATE INDEX IF NOT EXISTS idx_bookmarks_folder ON bookmarks(folderId);`,
-      `CREATE TABLE IF NOT EXISTS monitored_domains(domain TEXT PRIMARY KEY, url_pattern TEXT DEFAULT '');`,
+      `CREATE TABLE IF NOT EXISTS monitored_domains(id INTEGER PRIMARY KEY AUTOINCREMENT, domain TEXT, url_pattern TEXT DEFAULT '');`,
       `CREATE TABLE IF NOT EXISTS visit_history(id TEXT PRIMARY KEY, url TEXT, title TEXT, domain TEXT, timestamp INTEGER);`,
       `CREATE INDEX IF NOT EXISTS idx_history_domain ON visit_history(domain);`,
       `CREATE INDEX IF NOT EXISTS idx_history_timestamp ON visit_history(timestamp);`,
@@ -250,6 +250,18 @@ async function createSchema() {
       await exec(`ALTER TABLE monitored_domains ADD COLUMN url_pattern TEXT DEFAULT '';`);
     } catch (e) {
       console.warn('Failed to add url_pattern column, may already exist:', e);
+    }
+  }
+
+  if (version < 3) {
+    try {
+      // Migrate from domain PRIMARY KEY to id PRIMARY KEY to allow multiple patterns per domain
+      await exec(`CREATE TABLE monitored_domains_new (id INTEGER PRIMARY KEY AUTOINCREMENT, domain TEXT, url_pattern TEXT DEFAULT '');`);
+      await exec(`INSERT INTO monitored_domains_new (domain, url_pattern) SELECT domain, url_pattern FROM monitored_domains;`);
+      await exec(`DROP TABLE monitored_domains;`);
+      await exec(`ALTER TABLE monitored_domains_new RENAME TO monitored_domains;`);
+    } catch (e) {
+      console.warn('Failed to migrate monitored_domains schema to v3:', e);
     }
   }
 
@@ -267,17 +279,18 @@ async function execBatches(statements, batchSize = 100) {
   }
 }
 
-// helper: get all monitored domains with URL patterns for handlePossibleVisit
+// helper: get all monitored domains with URL patterns and IDs for handlePossibleVisit
 async function getAllMonitoredDomains() {
   try {
-    const rows = await exec(`SELECT domain, url_pattern FROM monitored_domains;`);
+    const rows = await exec(`SELECT id, domain, url_pattern FROM monitored_domains;`);
     const domains = [];
     for (const b of rows || []) {
       if (Array.isArray(b.rows) && b.rows.length > 0) {
         for (const row of b.rows) {
           domains.push({
-            domain: row[0],
-            urlPattern: row[1] || ''
+            id: row[0],
+            domain: row[1],
+            urlPattern: row[2] || ''
           });
         }
       }

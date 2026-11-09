@@ -135,6 +135,7 @@
       'popup.addDomainWithPattern': 'Add monitored domain with URL pattern',
       'popup.domainLabel': 'Domain',
       'popup.domainAddedWithPattern': 'Added monitored domain "{domain}" with pattern "{pattern}"',
+      'popup.domainPatternAlreadyMonitored': 'Domain "{domain}" with pattern "{pattern}" is already monitored',
       'options.privateHistoryHeading': 'Private Visit History',
       'options.privateHistoryDescription':
         'Visits recorded for monitored domains (native history is removed).',
@@ -266,6 +267,7 @@
       'popup.noActiveTabUrl': 'アクティブなタブの URL がありません',
       'popup.domainAlreadyMonitored': 'このドメインはすでに監視されています',
       'popup.domainAdded': '監視ドメインに追加しました',
+      'popup.domainPatternAlreadyMonitored': 'ドメイン "{domain}" とパターン "{pattern}" はすでに監視されています',
 
       'view.title': 'プライベートブックマーク - ビュー',
       'view.heading': 'プライベートブックマーク',
@@ -466,6 +468,7 @@
       'popup.noActiveTabUrl': '当前标签页没有 URL',
       'popup.domainAlreadyMonitored': '该域名已在监控列表中',
       'popup.domainAdded': '已添加到监控域名',
+      'popup.domainPatternAlreadyMonitored': '域名 "{domain}" 和模式 "{pattern}" 已在监控列表中',
       'popup.addDomainWithPattern': '添加监控域名和URL模式',
       'popup.domainLabel': '域名',
       'popup.domainAddedWithPattern': '已添加监控域名 "{domain}", 模式 "{pattern}"',
