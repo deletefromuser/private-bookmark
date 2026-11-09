@@ -104,7 +104,7 @@ async function loadMonitoredDomainsUI() {
     
     const badge = document.createElement('span');
     badge.className = 'badge bg-secondary me-1 mb-1 d-inline-flex align-items-center';
-    badge.textContent = domain;
+    badge.textContent = pattern ? `${domain} (${pattern})` : domain;
     if (pattern) {
       badge.title = `URL Pattern: ${pattern}`;
     }
