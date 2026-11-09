@@ -347,12 +347,6 @@
       'options.exportDbButton': 'データベースをエクスポート (JSON)',
       'options.restoreDbButton': 'データベースを復元',
       'options.openSqlConsole': 'SQL コンソールを開く',
-      'options.historyMonitoringHeading': '履歴の監視',
-      'options.historyMonitoringDescription':
-        '監視ドメイン: これらのドメインへの訪問は拡張機能のプライベート履歴に記録され、ブラウザのネイティブ履歴から削除されます。',
-      'options.domainPlaceholder': 'example.com',
-      'options.addDomainButton': 'ドメインを追加',
-      'options.clearDomainsButton': '監視ドメインをすべて解除',
       'options.privateHistoryHeading': 'プライベート閲覧履歴',
       'options.privateHistoryDescription':
         '監視ドメインで記録された訪問です（ネイティブ履歴は削除されます）。',
@@ -557,12 +551,6 @@
       'options.exportDbButton': '导出数据库 (JSON)',
       'options.restoreDbButton': '恢复数据库',
       'options.openSqlConsole': '打开 SQL 控制台',
-      'options.historyMonitoringHeading': '历史记录监控',
-      'options.historyMonitoringDescription':
-        '监控域名：访问这些域名时，记录会保存到扩展的私密历史中，并从浏览器的原生历史记录中删除。',
-      'options.domainPlaceholder': 'example.com',
-      'options.addDomainButton': '添加域名',
-      'options.clearDomainsButton': '清除所有监控域名',
       'options.privateHistoryHeading': '私密访问历史',
       'options.privateHistoryDescription':
         '为监控域名记录的访问（原生历史记录已被删除）。',
