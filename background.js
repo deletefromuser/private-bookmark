@@ -267,31 +267,6 @@ async function execBatches(statements, batchSize = 100) {
   }
 }
 
-// helper: check if domain is in monitored_domains table (supports URL patterns)
-async function isDomainMonitored(domain, url = '') {
-  try {
-    let sql = `SELECT domain, url_pattern FROM monitored_domains WHERE domain='${esc(domain)}';`;
-    const rows = await exec(sql);
-    for (const b of rows || []) {
-      if (Array.isArray(b.rows) && b.rows.length > 0) {
-        for (const row of b.rows) {
-          const pattern = row[1]; // url_pattern
-          if (!pattern || pattern === '') {
-            return true; // domain-only matching
-          }
-          if (url && url.includes(pattern)) {
-            return true; // URL pattern matches
-          }
-        }
-      }
-    }
-    return false;
-  } catch (e) {
-    console.warn('isDomainMonitored query failed', e);
-    return false;
-  }
-}
-
 // helper: get all monitored domains with URL patterns for handlePossibleVisit
 async function getAllMonitoredDomains() {
   try {
