@@ -113,6 +113,66 @@ function updateHistPageInfo(pageIndex, pageSize, total) {
   const next = document.getElementById('hist-next');
   if (prev) prev.disabled = !page.hasPrev;
   if (next) next.disabled = !page.hasNext;
+  renderPageButtons(pageIndex, pageSize, total);
+}
+
+function renderPageButtons(pageIndex, pageSize, total) {
+  const container = document.getElementById('hist-pages');
+  if (!container) return;
+  container.innerHTML = '';
+  const totalPages = Math.max(
+    1,
+    Math.ceil(Math.max(0, Number(total) || 0) / Math.max(1, Number(pageSize) || 1))
+  );
+  const index = Math.max(0, Math.min(Number(pageIndex) || 0, totalPages - 1));
+  if (totalPages <= 1) return;
+  const maxShown = 5;
+  let start, end;
+  if (totalPages <= maxShown) {
+    start = 1;
+    end = totalPages;
+  } else {
+    const half = Math.floor(maxShown / 2);
+    start = Math.max(2, index - half + 1);
+    end = Math.min(totalPages - 1, index + half);
+    if (end - start < maxShown - 2) {
+      if (start === 2) end = Math.min(totalPages - 1, start + maxShown - 3);
+      else start = Math.max(2, end - maxShown + 3);
+    }
+  }
+  if (start > 2) {
+    container.appendChild(pageBtn(1, index));
+    if (start > 3) container.appendChild(pageEllipsis());
+  }
+  for (let p = start; p <= end; p++) {
+    container.appendChild(pageBtn(p, index));
+  }
+  if (end < totalPages - 1) {
+    if (end < totalPages - 2) container.appendChild(pageEllipsis());
+    container.appendChild(pageBtn(totalPages, index));
+  }
+}
+
+function pageBtn(page, currentIndex) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className =
+    'btn btn-sm' +
+    (page - 1 === currentIndex ? ' btn-primary' : ' btn-outline-secondary');
+  btn.textContent = String(page);
+  if (page - 1 === currentIndex) btn.setAttribute('aria-current', 'page');
+  btn.addEventListener('click', () => {
+    globalThis.__hist_page_index = page - 1;
+    loadHistory();
+  });
+  return btn;
+}
+
+function pageEllipsis() {
+  const span = document.createElement('span');
+  span.className = 'text-muted small align-self-center';
+  span.textContent = '…';
+  return span;
 }
 
 function showUnlockError(msg) {
