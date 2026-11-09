@@ -1,5 +1,7 @@
 # Private Bookmark - Chrome MV3 Extension
 
+English | [简体中文](README_zh.md)
+
 Overview
 --------
 
