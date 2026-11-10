@@ -14,7 +14,7 @@
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
   "action": {
-    "default_popup": "popup.html",
+    "default_popup": "pages/popup/popup.html",
     "default_title": "__MSG_actionTitle__",
     "default_icon": {
       "16": "icons/logo_v1.png",
@@ -27,7 +27,7 @@
     "type": "module"
   },
   "options_ui": {
-    "page": "options.html",
+    "page": "pages/options/options.html",
     "open_in_tab": true
   }
 }

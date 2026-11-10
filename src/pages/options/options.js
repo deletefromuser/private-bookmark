@@ -101,14 +101,14 @@ async function loadMonitoredDomainsUI() {
     const id = entry.id;
     const domain = entry.domain;
     const pattern = entry.urlPattern || '';
-    
+
     const badge = document.createElement('span');
     badge.className = 'badge bg-secondary me-1 mb-1 d-inline-flex align-items-center';
     badge.textContent = pattern ? `${domain} (${pattern})` : domain;
     if (pattern) {
       badge.title = `URL Pattern: ${pattern}`;
     }
-    
+
     const edit = document.createElement('button');
     edit.className = 'btn btn-sm btn-outline-primary me-1';
     edit.innerHTML = '<i class="bi bi-pencil"></i>';
@@ -122,7 +122,7 @@ async function loadMonitoredDomainsUI() {
       await db.updateMonitoredDomain(id, newPattern);
       loadMonitoredDomainsUI();
     });
-    
+
     const del = document.createElement('button');
     del.className = 'btn-close btn-close-black ms-2';
     del.style.opacity = '0.8';
@@ -135,7 +135,7 @@ async function loadMonitoredDomainsUI() {
       await db.deleteMonitoredDomain(id);
       loadMonitoredDomainsUI();
     });
-    
+
     const wrapper = document.createElement('span');
     wrapper.appendChild(badge);
     wrapper.appendChild(edit);
@@ -148,26 +148,32 @@ document.getElementById('add-monitored-domain')?.addEventListener('click', async
   const input = document.getElementById('new-monitored-domain');
   const domain = input.value.trim();
   if (!domain) return;
-  
+
   // Show modal to add/edit domain with URL pattern
   const pattern = await globalThis._modal.showTextPrompt(
     tr('options.addDomainPatternPrompt'),
     '', // default empty pattern
     `${tr('options.domainLabel')}: ${domain}`
   );
-  
+
   if (pattern == null) return; // cancelled
-  
+
   // Check if exact domain+pattern combination already exists
   const exists = await db.checkDomainPatternExists(domain, pattern);
   if (exists) {
-    document.getElementById('status').textContent = tr('popup.domainPatternAlreadyMonitored', { domain, pattern });
+    document.getElementById('status').textContent = tr(
+      'popup.domainPatternAlreadyMonitored',
+      { domain, pattern }
+    );
     return;
   }
-  
+
   const result = await db.addMonitoredDomain(domain, pattern);
   if (result.duplicate) {
-    document.getElementById('status').textContent = tr('popup.domainPatternAlreadyMonitored', { domain, pattern });
+    document.getElementById('status').textContent = tr(
+      'popup.domainPatternAlreadyMonitored',
+      { domain, pattern }
+    );
     return;
   }
   input.value = '';
@@ -200,7 +206,9 @@ document.getElementById('export-db')?.addEventListener('click', async () => {
     const bookmarks = await db.query(
       'SELECT id,title,url,folderId,added FROM bookmarks;'
     );
-    const monitored = await db.query('SELECT domain, url_pattern FROM monitored_domains;');
+    const monitored = await db.query(
+      'SELECT domain, url_pattern FROM monitored_domains;'
+    );
     const visit_history = await db.query(
       'SELECT id,url,title,domain,timestamp FROM visit_history;'
     );

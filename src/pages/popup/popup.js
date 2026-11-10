@@ -86,23 +86,23 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
   const url = new URL(tab.url);
   const domain = url.hostname.replace(/^www\./, '');
   const currentUrl = tab.url;
-  
+
   // Show modal to add domain with URL pattern
   const pattern = await globalThis._modal.showTextPrompt(
     tr('popup.addDomainWithPattern'),
     currentUrl,
     `${tr('popup.domainLabel')}: ${domain}`
   );
-  
+
   if (pattern == null) return; // cancelled
-  
+
   // Check if exact domain+pattern combination already exists
   const exists = await globalThis.db.checkDomainPatternExists(domain, pattern);
   if (exists) {
     showStatus(tr('popup.domainPatternAlreadyMonitored', { domain, pattern }));
     return;
   }
-  
+
   const result = await globalThis.db.addMonitoredDomain(domain, pattern);
   if (result.duplicate) {
     showStatus(tr('popup.domainPatternAlreadyMonitored', { domain, pattern }));

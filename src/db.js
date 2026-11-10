@@ -164,17 +164,21 @@ const db = (function () {
       );
     },
     async getMonitoredDomainsWithPatterns() {
-      const results = await rawQuery('SELECT id, domain, url_pattern FROM monitored_domains');
-      return results.map(r => ({
+      const results = await rawQuery(
+        'SELECT id, domain, url_pattern FROM monitored_domains'
+      );
+      return results.map((r) => ({
         id: r.id,
         domain: r.domain,
-        urlPattern: r.url_pattern || ''
+        urlPattern: r.url_pattern || '',
       }));
     },
     async checkDomainPatternExists(domain, urlPattern = '') {
       const d = (domain || '').replaceAll("'", "''");
       const p = (urlPattern || '').replaceAll("'", "''");
-      const results = await rawQuery(`SELECT id FROM monitored_domains WHERE domain = '${d}' AND url_pattern = '${p}'`);
+      const results = await rawQuery(
+        `SELECT id FROM monitored_domains WHERE domain = '${d}' AND url_pattern = '${p}'`
+      );
       return results.length > 0;
     },
     async addMonitoredDomain(domain, urlPattern = '') {
@@ -183,8 +187,12 @@ const db = (function () {
       // Check for duplicate domain+pattern combination
       const exists = await this.checkDomainPatternExists(d, p);
       if (exists) return { id: null, duplicate: true };
-      await run(`INSERT INTO monitored_domains(domain, url_pattern) VALUES('${d}', '${p}');`);
-      const results = await rawQuery(`SELECT id FROM monitored_domains WHERE domain = '${d}' AND url_pattern = '${p}' ORDER BY id DESC LIMIT 1`);
+      await run(
+        `INSERT INTO monitored_domains(domain, url_pattern) VALUES('${d}', '${p}');`
+      );
+      const results = await rawQuery(
+        `SELECT id FROM monitored_domains WHERE domain = '${d}' AND url_pattern = '${p}' ORDER BY id DESC LIMIT 1`
+      );
       return { id: results[0]?.id || null, duplicate: false };
     },
     async updateMonitoredDomain(id, urlPattern) {

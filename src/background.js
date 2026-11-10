@@ -18,11 +18,11 @@ async function handlePossibleVisit(url, title) {
     return;
   }
   const domain = parsed.hostname.replace(/^www\./, '');
-  
+
   // Check against all monitored domains with their URL patterns
   const monitoredDomains = await getAllMonitoredDomains();
   let isMonitored = false;
-  
+
   for (const entry of monitoredDomains) {
     if (entry.domain === domain) {
       if (!entry.urlPattern || entry.urlPattern === '') {
@@ -32,7 +32,7 @@ async function handlePossibleVisit(url, title) {
       }
     }
   }
-  
+
   if (!isMonitored) return;
   const now = Date.now();
   const last = recentSeen.get(url) || 0;
@@ -256,8 +256,12 @@ async function createSchema() {
   if (version < 3) {
     try {
       // Migrate from domain PRIMARY KEY to id PRIMARY KEY to allow multiple patterns per domain
-      await exec(`CREATE TABLE monitored_domains_new (id INTEGER PRIMARY KEY AUTOINCREMENT, domain TEXT, url_pattern TEXT DEFAULT '');`);
-      await exec(`INSERT INTO monitored_domains_new (domain, url_pattern) SELECT domain, url_pattern FROM monitored_domains;`);
+      await exec(
+        `CREATE TABLE monitored_domains_new (id INTEGER PRIMARY KEY AUTOINCREMENT, domain TEXT, url_pattern TEXT DEFAULT '');`
+      );
+      await exec(
+        `INSERT INTO monitored_domains_new (domain, url_pattern) SELECT domain, url_pattern FROM monitored_domains;`
+      );
       await exec(`DROP TABLE monitored_domains;`);
       await exec(`ALTER TABLE monitored_domains_new RENAME TO monitored_domains;`);
     } catch (e) {
@@ -290,7 +294,7 @@ async function getAllMonitoredDomains() {
           domains.push({
             id: row[0],
             domain: row[1],
-            urlPattern: row[2] || ''
+            urlPattern: row[2] || '',
           });
         }
       }
@@ -401,7 +405,8 @@ async function migrateLocalStorageToSQLite() {
     const mons = Array.isArray(keys.monitoredDomains) ? keys.monitoredDomains : [];
     await execBatches(
       mons.map(
-        (d) => `INSERT OR REPLACE INTO monitored_domains(domain, url_pattern) VALUES('${esc(d)}', '');`
+        (d) =>
+          `INSERT OR REPLACE INTO monitored_domains(domain, url_pattern) VALUES('${esc(d)}', '');`
       )
     );
 

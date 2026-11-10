@@ -134,8 +134,10 @@
       'options.patternLabel': 'URL Pattern',
       'popup.addDomainWithPattern': 'Add monitored domain with URL pattern',
       'popup.domainLabel': 'Domain',
-      'popup.domainAddedWithPattern': 'Added monitored domain "{domain}" with pattern "{pattern}"',
-      'popup.domainPatternAlreadyMonitored': 'Domain "{domain}" with pattern "{pattern}" is already monitored',
+      'popup.domainAddedWithPattern':
+        'Added monitored domain "{domain}" with pattern "{pattern}"',
+      'popup.domainPatternAlreadyMonitored':
+        'Domain "{domain}" with pattern "{pattern}" is already monitored',
       'options.privateHistoryHeading': 'Private Visit History',
       'options.privateHistoryDescription':
         'Visits recorded for monitored domains (native history is removed).',
@@ -180,8 +182,7 @@
       'options.migrationError': 'Migration error: {error}',
       'options.unknownError': 'unknown',
       'options.addBookmarkHeading': 'Add Bookmark',
-      'options.addBookmarkDescription':
-        'Open the Add Bookmark page in a new tab.',
+      'options.addBookmarkDescription': 'Open the Add Bookmark page in a new tab.',
       'options.openAddPage': 'Add Bookmark',
 
       'sql.title': 'SQL Console',
@@ -240,7 +241,8 @@
       'popup.bookmarkAdded': 'ブックマークを追加しました',
       'popup.addDomainWithPattern': '監視ドメインとURLパターンを追加',
       'popup.domainLabel': 'ドメイン',
-      'popup.domainAddedWithPattern': '監視ドメイン "{domain}" をパターン "{pattern}" で追加しました',
+      'popup.domainAddedWithPattern':
+        '監視ドメイン "{domain}" をパターン "{pattern}" で追加しました',
 
       'options.historyMonitoringHeading': '履歴の監視',
       'options.historyMonitoringDescription':
@@ -267,7 +269,8 @@
       'popup.noActiveTabUrl': 'アクティブなタブの URL がありません',
       'popup.domainAlreadyMonitored': 'このドメインはすでに監視されています',
       'popup.domainAdded': '監視ドメインに追加しました',
-      'popup.domainPatternAlreadyMonitored': 'ドメイン "{domain}" とパターン "{pattern}" はすでに監視されています',
+      'popup.domainPatternAlreadyMonitored':
+        'ドメイン "{domain}" とパターン "{pattern}" はすでに監視されています',
 
       'view.title': 'プライベートブックマーク - ビュー',
       'view.heading': 'プライベートブックマーク',
@@ -395,8 +398,7 @@
       'options.migrationError': '移行エラー: {error}',
       'options.unknownError': '不明',
       'options.addBookmarkHeading': 'ブックマークを追加',
-      'options.addBookmarkDescription':
-        'ブックマーク追加ページを新しいタブで開きます。',
+      'options.addBookmarkDescription': 'ブックマーク追加ページを新しいタブで開きます。',
       'options.openAddPage': 'ブックマークを追加',
 
       'sql.title': 'SQL コンソール',
@@ -468,7 +470,8 @@
       'popup.noActiveTabUrl': '当前标签页没有 URL',
       'popup.domainAlreadyMonitored': '该域名已在监控列表中',
       'popup.domainAdded': '已添加到监控域名',
-      'popup.domainPatternAlreadyMonitored': '域名 "{domain}" 和模式 "{pattern}" 已在监控列表中',
+      'popup.domainPatternAlreadyMonitored':
+        '域名 "{domain}" 和模式 "{pattern}" 已在监控列表中',
       'popup.addDomainWithPattern': '添加监控域名和URL模式',
       'popup.domainLabel': '域名',
       'popup.domainAddedWithPattern': '已添加监控域名 "{domain}", 模式 "{pattern}"',
@@ -595,8 +598,7 @@
       'options.migrationError': '迁移错误：{error}',
       'options.unknownError': '未知',
       'options.addBookmarkHeading': '添加书签',
-      'options.addBookmarkDescription':
-        '在新标签页中打开添加书签页面。',
+      'options.addBookmarkDescription': '在新标签页中打开添加书签页面。',
       'options.openAddPage': '添加书签',
 
       'sql.title': 'SQL 控制台',

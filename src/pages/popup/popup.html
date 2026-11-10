@@ -4,8 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title data-i18n="popup.title">Private Bookmark</title>
-    <link rel="stylesheet" href="styles.css" />
-    <script src="i18n.js"></script>
+    <link rel="stylesheet" href="../../styles.css" />
+    <script src="../../i18n.js"></script>
   </head>
 
   <body class="popup-page">
@@ -18,8 +18,16 @@
     ></div>
 
     <section id="add-current-section">
-      <label id="add-current-folder-label" class="form-label mb-1" data-i18n="add.addCurrentFolder">Folder:</label>
-      <select id="add-current-folder-select" class="form-select form-select-sm mb-2"></select>
+      <label
+        id="add-current-folder-label"
+        class="form-label mb-1"
+        data-i18n="add.addCurrentFolder"
+        >Folder:</label
+      >
+      <select
+        id="add-current-folder-select"
+        class="form-select form-select-sm mb-2"
+      ></select>
       <button id="add-current" class="btn btn-info me-2" data-i18n="popup.addCurrent">
         Add Current Tab
       </button>
@@ -47,9 +55,9 @@
       </button>
     </section>
 
-    <script src="shared.js"></script>
-    <script src="modal.js"></script>
-    <script src="db.js"></script>
+    <script src="../../shared.js"></script>
+    <script src="../../modal.js"></script>
+    <script src="../../db.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
