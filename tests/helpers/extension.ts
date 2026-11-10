@@ -18,7 +18,7 @@ export function computeExtensionId(keyPem: string): string {
   const der = Buffer.from(keyPem, 'base64');
   const hash = crypto.createHash('sha256').update(der).digest();
   const nibbles = hash.subarray(0, 16);
-  return Array.from(nibbles, byte => {
+  return Array.from(nibbles, (byte) => {
     const high = (byte >> 4) & 0xf;
     const low = byte & 0xf;
     return String.fromCharCode(97 + high) + String.fromCharCode(97 + low);
@@ -63,7 +63,7 @@ export async function launchWithExtension(): Promise<ExtensionFixture> {
   const serviceWorkers = context.serviceWorkers();
   if (serviceWorkers.length === 0) {
     // Give it a moment to start up
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   }
 
   return { context, extensionId };
@@ -95,7 +95,7 @@ export async function unlockPage(page: Page, password: string = ''): Promise<voi
 export async function openExtensionPage(
   context: BrowserContext,
   extensionId: string,
-  pagePath: string,
+  pagePath: string
 ): Promise<Page> {
   const serviceWorkers = context.serviceWorkers();
   if (serviceWorkers.length === 0) {
@@ -107,14 +107,14 @@ export async function openExtensionPage(
   const url = extensionUrl(extensionId, pagePath);
 
   // Use chrome.tabs.create from the service worker context to open the page.
-  await serviceWorkers[0].evaluate(targetUrl => {
+  await serviceWorkers[0].evaluate((targetUrl) => {
     chrome.tabs.create({ url: targetUrl });
   }, url);
 
   // Wait for the new tab/page to open
   const [newPage] = await Promise.all([
     context.waitForEvent('page'),
-    new Promise(resolve => setTimeout(resolve, 1000)),
+    new Promise((resolve) => setTimeout(resolve, 1000)),
   ]);
 
   await newPage.waitForLoadState({ timeout: 15000 });
