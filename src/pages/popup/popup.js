@@ -112,11 +112,11 @@ document.getElementById('add-current-domain')?.addEventListener('click', async (
 });
 
 document.getElementById('open-view').addEventListener('click', () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('view.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('pages/view/view.html') });
 });
 
 document.getElementById('open-history-viewer')?.addEventListener('click', async () => {
-  chrome.tabs.create({ url: chrome.runtime.getURL('history.html') });
+  chrome.tabs.create({ url: chrome.runtime.getURL('pages/history/history.html') });
 });
 
 // small status helper

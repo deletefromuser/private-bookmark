@@ -341,7 +341,7 @@ document.getElementById('import-db')?.addEventListener('click', async () => {
 // Open SQL console in a new tab
 document.getElementById('open-sql-console')?.addEventListener('click', () => {
   try {
-    window.open('sql.html', '_blank');
+    window.open(chrome.runtime.getURL('pages/sql/sql.html'), '_blank');
   } catch (e) {
     console.warn('Open SQL console failed', e);
   }
@@ -350,7 +350,7 @@ document.getElementById('open-sql-console')?.addEventListener('click', () => {
 // Open Add Bookmark page in a new tab
 document.getElementById('open-add-page')?.addEventListener('click', () => {
   try {
-    window.open('add.html', '_blank');
+    window.open(chrome.runtime.getURL('pages/add/add.html'), '_blank');
   } catch (e) {
     console.warn('Open add page failed', e);
   }
