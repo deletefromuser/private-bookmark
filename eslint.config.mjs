@@ -10,7 +10,7 @@ const browserGlobals = {
 
 export default [
   {
-    ignores: ['build/**', 'node_modules/**', 'wa-sqlite/**', 'package-lock.json'],
+    ignores: ['build/**', 'node_modules/**', 'src/wa-sqlite/**', 'package-lock.json'],
   },
   js.configs.recommended,
   {
@@ -26,7 +26,7 @@ export default [
     },
   },
   {
-    files: ['background.js'],
+    files: ['src/background.js'],
     languageOptions: {
       globals: {
         ...browserGlobals,
