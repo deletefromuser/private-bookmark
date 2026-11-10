@@ -3,24 +3,55 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import vm from 'node:vm';
 
-const source = readFileSync(new URL('../i18n.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('../src/i18n.js', import.meta.url), 'utf8');
 const context = vm.createContext({ console });
 vm.runInContext(source, context, { filename: 'i18n.js' });
 const { I18n } = context;
 
-const htmlFiles = readdirSync(new URL('..', import.meta.url))
-  .filter((name) => name.endsWith('.html'))
-  .map((name) => ({
-    name,
-    source: readFileSync(new URL(`../${name}`, import.meta.url), 'utf8'),
-  }));
+const pagesDir = new URL('../src/pages', import.meta.url);
+const pageDirs = readdirSync(pagesDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
 
-const jsFiles = readdirSync(new URL('..', import.meta.url))
-  .filter((name) => name.endsWith('.js') && name !== 'i18n.js')
-  .map((name) => ({
-    name,
-    source: readFileSync(new URL(`../${name}`, import.meta.url), 'utf8'),
-  }));
+const htmlFiles = [];
+for (const pageDir of pageDirs) {
+  const dir = new URL(`../src/pages/${pageDir}/`, import.meta.url);
+  for (const file of readdirSync(dir)) {
+    if (file.endsWith('.html')) {
+      htmlFiles.push({
+        name: `${pageDir}/${file}`,
+        source: readFileSync(
+          new URL(`../src/pages/${pageDir}/${file}`, import.meta.url),
+          'utf8'
+        ),
+      });
+    }
+  }
+}
+
+const jsFiles = [];
+for (const pageDir of pageDirs) {
+  const dir = new URL(`../src/pages/${pageDir}/`, import.meta.url);
+  for (const file of readdirSync(dir)) {
+    if (file.endsWith('.js')) {
+      jsFiles.push({
+        name: `${pageDir}/${file}`,
+        source: readFileSync(
+          new URL(`../src/pages/${pageDir}/${file}`, import.meta.url),
+          'utf8'
+        ),
+      });
+    }
+  }
+}
+for (const file of readdirSync(new URL('../src/', import.meta.url))) {
+  if (file.endsWith('.js') && file !== 'i18n.js') {
+    jsFiles.push({
+      name: file,
+      source: readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8'),
+    });
+  }
+}
 
 function collectMatches(source, pattern) {
   const matches = new Set();
