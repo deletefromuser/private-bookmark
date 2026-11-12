@@ -70,29 +70,6 @@
       </button>
     </section>
     <section>
-      <h2 data-i18n="options.importExportHeading">Import / Export</h2>
-      <p data-i18n="options.importDescription">
-        Select a Chrome bookmark folder to import into a new private folder:
-      </p>
-      <select id="chrome-folders-select" class="form-select mb-2"></select>
-      <button
-        id="import-chrome"
-        class="btn btn-sm btn-primary mb-2"
-        data-i18n="options.importChromeButton"
-      >
-        Import Selected Chrome Folder
-      </button>
-      <p data-i18n="options.exportDescription">Export private bookmarks to HTML:</p>
-      <button
-        id="export-html"
-        class="btn btn-sm btn-outline-primary"
-        data-i18n="options.exportHtmlButton"
-      >
-        Export as HTML
-      </button>
-      <div id="import-status" aria-live="polite"></div>
-    </section>
-    <section>
       <h2 data-i18n="options.backupHeading">Backup / Restore</h2>
       <p data-i18n="options.backupDescription">
         Export the entire SQLite database to a JSON file, or restore from a previously
@@ -100,35 +77,13 @@
       </p>
       <div class="mb-2">
         <button
-          id="export-db"
-          class="btn btn-sm btn-outline-secondary"
-          data-i18n="options.exportDbButton"
-        >
-          Export Database (JSON)
-        </button>
-        <input
-          id="import-db-file"
-          type="file"
-          accept="application/json"
-          class="form-control-file d-inline-block ms-2"
-          style="width: auto"
-        />
-        <button
-          id="import-db"
-          class="btn btn-sm btn-outline-danger ms-2"
-          data-i18n="options.restoreDbButton"
-        >
-          Restore Database
-        </button>
-        <button
           id="open-sql-console"
-          class="btn btn-sm btn-outline-dark ms-2"
+          class="btn btn-sm btn-outline-dark"
           data-i18n="options.openSqlConsole"
         >
           Open SQL Console
         </button>
       </div>
-      <div id="backup-status" aria-live="polite"></div>
     </section>
     <section>
       <h3 data-i18n="options.historyMonitoringHeading">History Monitoring</h3>
@@ -170,15 +125,8 @@
       </p>
       <div id="visit-history-list" class="mb-2"></div>
       <button
-        id="export-visit-history"
-        class="btn btn-sm btn-outline-primary"
-        data-i18n="options.exportHistoryButton"
-      >
-        Export Visit History (JSON)
-      </button>
-      <button
         id="clear-visit-history"
-        class="btn btn-sm btn-outline-danger ms-2"
+        class="btn btn-sm btn-outline-danger"
         data-i18n="options.clearHistoryButton"
       >
         Clear Visit History
@@ -196,6 +144,70 @@
       >
         Add Bookmark
       </button>
+    </section>
+    <section>
+      <h2 data-i18n="options.importExportHeading">Import / Export</h2>
+      <div class="mb-3">
+        <p data-i18n="options.importDescription">
+          Select a Chrome bookmark folder to import into a new private folder:
+        </p>
+        <select id="chrome-folders-select" class="form-select mb-2"></select>
+        <button
+          id="import-chrome"
+          class="btn btn-sm btn-primary mb-2"
+          data-i18n="options.importChromeButton"
+        >
+          Import Selected Chrome Folder
+        </button>
+        <div id="import-status" aria-live="polite"></div>
+      </div>
+      <div class="mb-3">
+        <p data-i18n="options.exportDescription">Export private bookmarks to HTML:</p>
+        <button
+          id="export-html"
+          class="btn btn-sm btn-outline-primary"
+          data-i18n="options.exportHtmlButton"
+        >
+          Export as HTML
+        </button>
+      </div>
+      <div class="mb-3">
+        <p data-i18n="options.backupDescription">
+          Export the entire SQLite database to a JSON file, or restore from a previously
+          exported file.
+        </p>
+        <button
+          id="export-db"
+          class="btn btn-sm btn-outline-secondary"
+          data-i18n="options.exportDbButton"
+        >
+          Export Database (JSON)
+        </button>
+        <input
+          id="import-db-file"
+          type="file"
+          accept="application/json"
+          class="form-control-file d-inline-block ms-2"
+          style="width: auto"
+        />
+        <button
+          id="import-db"
+          class="btn btn-sm btn-outline-danger ms-2"
+          data-i18n="options.restoreDbButton"
+        >
+          Restore Database
+        </button>
+        <div id="backup-status" aria-live="polite"></div>
+      </div>
+      <div class="mb-3">
+        <button
+          id="export-visit-history"
+          class="btn btn-sm btn-outline-primary"
+          data-i18n="options.exportHistoryButton"
+        >
+          Export Visit History (JSON)
+        </button>
+      </div>
     </section>
     <script src="../../db.js"></script>
     <script src="options.js"></script>
