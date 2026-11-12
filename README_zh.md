@@ -89,8 +89,8 @@ UI/用法
 
 - 安装依赖：`npm install`
 - 监视构建：`npm start`
-- 生产构建：`npm run build`（删除 `build/`，打包显式入口，然后复制 `manifest.json`、`icons/*` 和 `_locales/**/*`）
-- 通过 `chrome://extensions` -> 开发者模式 -> 加载未打包的扩展 加载 `build/`。
+- 生产构建：`npm run build`（删除 `dist/`，打包显式入口，然后复制 `manifest.json`、`icons/*` 和 `_locales/**/*`）
+- 通过 `chrome://extensions` -> 开发者模式 -> 加载未打包的扩展 加载 `dist/`。
 - 测试：`npm test`（针对共享辅助函数的 `node:test` 覆盖）。
 - 代码检查：`npm run lint`（ESLint）。
 - 格式化：`npm run format` 或使用 `npm run format:check`（Prettier）。
@@ -100,7 +100,7 @@ UI/用法
 测试清单
 ----------
 
-1. 运行 `npm run build`，并在 `chrome://extensions` 中加载未打包的 `build/`。
+1. 运行 `npm run build`，并在 `chrome://extensions` 中加载未打包的 `dist/`。
 2. 确认权限包括 `storage`、`tabs`、`bookmarks`、`history` 和 `webNavigation`。
 3. 在选项页中向监控域名添加一个域名。
 4. 访问该域名上的页面，等待其加载，并确认条目出现在私密访问历史中，且 URL 从原生历史记录中被移除。

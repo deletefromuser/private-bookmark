@@ -2,15 +2,15 @@
 
 ## Project
 
-Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private bookmarks and visit history in SQLite WASM. Source files live under `src/`; the loadable extension is built into `build/`.
+Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private bookmarks and visit history in SQLite WASM. Source files live under `src/`; the loadable extension is built into `dist/`.
 
 ## Commands
 
 - `npm install`
-- `npm start` - Parcel watch of explicit entries into `build/`
-- `npm run build` - deletes `build/`, bundles explicit HTML/JS entries from `src/`, then copies `src/manifest.json`, `src/icons/*`, and `src/_locales/**/*`
-- `npm run clean` - remove `build/`
-- Load `build/` via `chrome://extensions` -> Developer mode -> Load unpacked.
+- `npm start` - Parcel watch of explicit entries into `dist/`
+- `npm run build` - deletes `dist/`, bundles explicit HTML/JS entries from `src/`, then copies `src/manifest.json`, `src/icons/*`, and `src/_locales/**/*`
+- `npm run clean` - remove `dist/`
+- Load `dist/` via `chrome://extensions` -> Developer mode -> Load unpacked.
 - `npm test` - `node:test` coverage for shared helpers in `test/`
 - `npm run lint` - ESLint with flat config
 - `npm run format` / `npm run format:check` - Prettier
@@ -27,7 +27,7 @@ Chrome MV3 extension (vanilla JS, locally bundled Bootstrap) that stores private
 - `src/shared.js` must load before page scripts; it provides `AppUtils` escaping, URL safety, destructive SQL detection, PBKDF2 password functions, and `authenticate`.
 - `src/i18n.js` must load before page scripts; it provides `I18n.t`, automatic browser-language detection for English/Japanese/Simplified Chinese, and the Options language override stored in extension `localStorage`.
 - `src/modal.js` must load before page scripts; it provides async `_modal.showConfirm` / `showTextPrompt` used everywhere.
-- Manifest name, description, and action title use `__MSG_*__` keys from `src/_locales/{en,ja,zh_CN}/messages.json`; `npm run copy:static` copies those locale files into `build/`.
+- Manifest name, description, and action title use `__MSG_*__` keys from `src/_locales/{en,ja,zh_CN}/messages.json`; `npm run copy:static` copies those locale files into `dist/`.
 - Schema and indexes are defined in `createSchema()` in `src/background.js`. Schema upgrades use `PRAGMA user_version` and the `SCHEMA_VERSION` constant; add a version-gated migration block when changing the schema.
 - Legacy `chrome.storage.local` data is migrated automatically when the worker starts. The `db_migrated_v1` setting in the SQLite `settings` table is checked before importing legacy data, so completed installs skip that work.
 

@@ -89,8 +89,8 @@ Development
 
 - Install dependencies: `npm install`
 - Watch build: `npm start`
-- Production build: `npm run build` (deletes `build/`, bundles explicit entries, then copies `manifest.json`, `icons/*`, and `_locales/**/*`)
-- Load `build/` via `chrome://extensions` -> Developer mode -> Load unpacked.
+- Production build: `npm run build` (deletes `dist/`, bundles explicit entries, then copies `manifest.json`, `icons/*`, and `_locales/**/*`)
+- Load `dist/` via `chrome://extensions` -> Developer mode -> Load unpacked.
 - Tests: `npm test` (`node:test` coverage for shared helpers).
 - Lint: `npm run lint` (ESLint).
 - Format: `npm run format` or check with `npm run format:check` (Prettier).
@@ -100,7 +100,7 @@ Development
 Testing checklist
 -----------------
 
-1. Run `npm run build` and load `build/` unpacked in `chrome://extensions`.
+1. Run `npm run build` and load `dist/` unpacked in `chrome://extensions`.
 2. Confirm permissions include `storage`, `tabs`, `bookmarks`, `history`, and `webNavigation`.
 3. Add a domain to monitored domains in Options.
 4. Visit a page on that domain, wait for it to load, and confirm an entry appears in Private Visit History and the URL is removed from native history.

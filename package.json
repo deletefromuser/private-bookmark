@@ -7,10 +7,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "clean": "node -e \"require('fs').rmSync('build',{recursive:true,force:true})\"",
-    "copy:static": "copyfiles --up 1 src/manifest.json src/icons/* src/_locales/**/* build",
-    "start": "npm run copy:static && parcel watch src/pages/popup/popup.html src/pages/add/add.html src/pages/view/view.html src/pages/options/options.html src/pages/history/history.html src/pages/sql/sql.html src/background.js --no-cache --no-hmr --dist-dir build",
-    "build": "npm run clean && parcel build src/pages/popup/popup.html src/pages/add/add.html src/pages/view/view.html src/pages/options/options.html src/pages/history/history.html src/pages/sql/sql.html src/background.js --no-cache --dist-dir build --no-source-maps && npm run copy:static"
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "copy:static": "copyfiles --up 1 src/manifest.json src/icons/* src/_locales/**/* dist",
+    "start": "npm run copy:static && parcel watch src/pages/popup/popup.html src/pages/add/add.html src/pages/view/view.html src/pages/options/options.html src/pages/history/history.html src/pages/sql/sql.html src/background.js --no-cache --no-hmr --dist-dir dist",
+    "build": "npm run clean && parcel build src/pages/popup/popup.html src/pages/add/add.html src/pages/view/view.html src/pages/options/options.html src/pages/history/history.html src/pages/sql/sql.html src/background.js --no-cache --dist-dir dist --no-source-maps && npm run copy:static"
   },
   "repository": {
     "type": "git",
