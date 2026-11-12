@@ -572,31 +572,3 @@ document.getElementById('export-html')?.addEventListener('click', async () => {
 // initialize folder UI on options page
 loadFoldersUI();
 loadChromeFoldersIntoSelect();
-
-document.getElementById('migrate-db')?.addEventListener('click', () => {
-  const statusEl = document.getElementById('migration-status');
-  if (statusEl) statusEl.textContent = tr('options.migrationStarting');
-  try {
-    chrome.runtime
-      .sendMessage({ action: 'MIGRATE_DB' })
-      .then((resp) => {
-        if (resp && resp.status === 'success') {
-          if (statusEl) statusEl.textContent = tr('options.migrationCompleted');
-        } else {
-          if (statusEl)
-            statusEl.textContent = tr('options.migrationFailed', {
-              error: resp?.message || tr('options.unknownError'),
-            });
-        }
-      })
-      .catch((err) => {
-        if (statusEl)
-          statusEl.textContent = tr('options.migrationFailed', {
-            error: String(err),
-          });
-      });
-  } catch (e) {
-    if (statusEl)
-      statusEl.textContent = tr('options.migrationError', { error: String(e) });
-  }
-});
