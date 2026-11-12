@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extName__",
+  "version": "2026.10.22",
+  "version_name": "2026-10-22",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuW5n+ZtY4jv7E5pglV9qaQpzl5L8aC29ZkAmp9xQnr76yQs4+n4VKazW4RsEduGKr9C5BcgnGhfgffZEzvdwJo3V3nlP+M+J26uT+LAwfxZgNJPk282PejXLm8AktqMcOfMyvJHAdS+DaoKlGmnZHgam2GlaU7a8Q+T9nLcc/K33Lga3uR6MS9WrGIbyzn/UTWXjD9CmzinQ2dWzJNJX7cemtu+Ysaa2RuurzuNFfYSKIrWmRfjxxqm8IW4AE5Ezz4jkdMrWIDZKgyVRLCqZHxgG6uCYddyZ7cDe9t8yAwd1gAAQk9RufhcLHDeOwq+HSPbhCbFwrd1smyoNrMgnxwIDAQAB",
+  "icons": {
+    "48": "icons/logo_v1.png",
+    "96": "icons/logo_v1.png"
+  },
+  "permissions": ["storage", "tabs", "bookmarks", "history", "webNavigation"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
+  "action": {
+    "default_popup": "pages/popup/popup.html",
+    "default_title": "__MSG_actionTitle__",
+    "default_icon": {
+      "16": "icons/logo_v1.png",
+      "32": "icons/logo_v1.png",
+      "64": "icons/logo_v1.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "pages/options/options.html",
+    "open_in_tab": true
+  }
+}

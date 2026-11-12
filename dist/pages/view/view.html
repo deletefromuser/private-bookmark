@@ -1,0 +1,36 @@
+<!DOCTYPE html><html lang=en><meta charset=utf-8><meta name=viewport content="width=device-width, initial-scale=1"><title data-i18n=view.title>Private Bookmarks - View</title><link rel=stylesheet href=/popup.71ff9254.css><script src=/popup.dc1c4c05.js></script><script src=/popup.f7e87010.js></script><script src=/popup.dddb13a9.js></script><body class=view-page>
+    <h1 data-i18n=view.heading>Private Bookmarks</h1>
+    <div id=auth>
+      <p id=auth-msg data-i18n=view.authChecking>Checking...</p>
+      <input id=pw type=password placeholder="Enter password" class="form-control mb-2" data-i18n-placeholder=view.passwordPlaceholder>
+      <button id=unlock class="btn btn-primary" data-i18n=view.unlock>Unlock</button>
+    </div>
+    <div id=content style=display:none>
+      <section>
+        <div class="align-items-center d-flex mb-2">
+          <h2 class=mb-0 data-i18n=view.bookmarksHeading>Bookmarks</h2>
+          <button id=refresh-bookmarks class="btn btn-outline-secondary btn-sm ms-3" data-i18n=common.refresh>
+            Refresh
+          </button>
+          <button id=delete-all-bookmarks class="btn btn-danger btn-sm ms-2" data-i18n=common.removeAll>
+            Remove All
+          </button>
+        </div>
+        <div id=bookmarks-list data-i18n=common.loading>Loading...</div>
+        <div class="align-items-center d-flex justify-content-between mt-2">
+          <div>
+            <button id=bm-prev class="btn btn-outline-secondary btn-sm" data-i18n=common.prev>
+              Prev
+            </button>
+            <button id=bm-next class="btn btn-outline-secondary btn-sm ms-2" data-i18n=common.next>
+              Next
+            </button>
+          </div>
+          <div id=bm-page-info class="small text-muted"></div>
+        </div>
+      </section>
+    </div>
+    <script src=/popup.b080b319.js></script>
+    <script src=/view.6646e303.js></script>
+  
+
